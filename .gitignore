@@ -1,0 +1,5 @@
+.DS_Store
+.godot/
+games/**/.godot/
+games/**/server/node_modules/
+games/**/server/data/accounts.json

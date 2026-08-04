@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="CronoGames: il tuo hub per giocare online." />
+    <title>CronoGames — Play without limits</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="page-glow glow-one" aria-hidden="true"></div>
+    <div class="page-glow glow-two" aria-hidden="true"></div>
+
+    <header class="site-header container">
+      <a class="brand" href="#home" aria-label="CronoGames, torna alla home">
+        <span class="brand-symbol" aria-hidden="true"><span></span></span>
+        <span>CRONO<span>GAMES</span></span>
+      </a>
+
+      <nav class="main-nav" aria-label="Navigazione principale">
+        <a class="active" href="#home">Home</a>
+        <a href="#games">Giochi</a>
+        <a href="#about">Come funziona</a>
+      </nav>
+
+      <div class="header-tools">
+        <label class="search-control" for="game-search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.15a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z" /></svg>
+          <span class="sr-only">Cerca un gioco</span>
+          <input id="game-search" type="search" placeholder="Cerca giochi" autocomplete="off" />
+        </label>
+
+        <span class="online-status" title="Contatore demo">
+          <i></i><strong id="online-players">248</strong> online
+        </span>
+
+        <div class="auth-actions" id="auth-guest">
+          <button class="text-button" type="button" data-open-auth="login">Accedi</button>
+          <button class="button compact" type="button" data-open-auth="register">Registrati</button>
+        </div>
+        <div class="account-actions" id="auth-account" hidden>
+          <span class="account-chip"><i>◈</i><strong id="account-name"></strong></span>
+          <button class="text-button" type="button" id="logout-button">Esci</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="home">
+      <section class="hero container" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><i></i> ORA DISPONIBILE</p>
+          <h1 id="hero-title">Prendi il comando.<br /><em>Domina l’arena.</em></h1>
+          <p class="hero-description">Sfida piloti da tutto il mondo, raccogli energia e fai crescere la tua nave in <strong>Ship.io</strong>.</p>
+          <div class="hero-actions">
+            <button class="button launch-game" type="button" data-game-id="ship">
+              <span>Gioca a Ship.io</span>
+              <span aria-hidden="true">→</span>
+            </button>
+            <a class="link-button" href="#games">Esplora i giochi <span aria-hidden="true">↓</span></a>
+          </div>
+          <div class="hero-meta">
+            <div><strong>20</strong><span>piloti per arena</span></div>
+            <div><strong>∞</strong><span>sfide online</span></div>
+            <div><strong>TOP 5</strong><span>leaderboard live</span></div>
+          </div>
+        </div>
+
+        <div class="hero-art" aria-label="Illustrazione di una nave spaziale nell’arena" role="img">
+          <span class="grid-plane"></span>
+          <span class="orbit orbit-a"></span><span class="orbit orbit-b"></span><span class="orbit orbit-c"></span>
+          <span class="energy energy-a"></span><span class="energy energy-b"></span><span class="energy energy-c"></span>
+          <svg class="hero-ship" viewBox="0 0 360 260" aria-hidden="true">
+            <defs>
+              <linearGradient id="shipFill" x1="0" x2="1"><stop stop-color="#6b55ff"/><stop offset="1" stop-color="#bc3dff"/></linearGradient>
+              <linearGradient id="wingFill" x1="0" x2="1"><stop stop-color="#1f163d"/><stop offset="1" stop-color="#6d4dfc"/></linearGradient>
+              <filter id="shipGlow"><feGaussianBlur stdDeviation="5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            </defs>
+            <path d="M274 130 160 36l-67 26 45 43-86 31 67 15 29 49 31-69 75 25Z" fill="url(#wingFill)" stroke="#a58cff" stroke-width="4" stroke-linejoin="round"/>
+            <path d="m321 128-137-26-91 34 57 25 33 62 26-72Z" fill="url(#shipFill)" stroke="#e7dfff" stroke-width="4" stroke-linejoin="round"/>
+            <path d="m216 116-43 25 27 12 25-17Z" fill="#e9e5ff" opacity=".85"/>
+            <path d="m76 119-45 17 50 11-27-20Z" fill="#ff74f2" filter="url(#shipGlow)"/>
+            <circle cx="296" cy="128" r="5" fill="#fff"/>
+          </svg>
+          <span class="ship-card card-a"><b>ENERGY</b><strong>+ 24 XP</strong></span>
+          <span class="ship-card card-b"><b>RANK</b><strong>#02</strong></span>
+        </div>
+      </section>
+
+      <section class="games-section container" id="games" aria-labelledby="games-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow"><i></i> SCEGLI LA TUA SFIDA</p>
+            <h2 id="games-title">Giochi in primo piano</h2>
+          </div>
+          <button class="text-button" data-message="La libreria completa arriverà con i prossimi giochi.">Vedi tutti <span aria-hidden="true">→</span></button>
+        </div>
+
+        <div class="games-grid" id="games-grid">
+          <article class="game-card game-card--ship" data-game="ship.io multiplayer arena spaziale">
+            <div class="game-visual ship-visual" aria-hidden="true"><span class="visual-orbit"></span><span class="mini-ship">◆</span><span class="mini-energy one"></span><span class="mini-energy two"></span></div>
+            <div class="game-card-body">
+              <div><span class="tag live">● LIVE</span><h3>Ship.io</h3><p>Multiplayer · Arena</p></div>
+              <button class="round-play launch-game" type="button" data-game-id="ship" aria-label="Gioca a Ship.io">▶</button>
+            </div>
+          </article>
+
+          <article class="game-card game-card--slither" data-game="slither.io serpente neon crescita arena godot">
+            <div class="game-visual slither-visual" aria-hidden="true"><span class="slither-trail"><i></i><i></i><i></i><i></i><i></i><b></b></span><span class="slither-food food-one"></span><span class="slither-food food-two"></span></div>
+            <div class="game-card-body">
+              <div><span class="tag live">● LIVE</span><h3>Slither.io</h3><p>Arcade · Growth</p></div>
+              <button class="round-play launch-game" type="button" data-game-id="slither" aria-label="Gioca a Slither.io">▶</button>
+            </div>
+          </article>
+
+          <article class="game-card coming-soon" data-game="nebula run corsa spaziale">
+            <div class="game-visual nebula-visual" aria-hidden="true"><span>✦</span></div>
+            <div class="game-card-body"><div><span class="tag">IN ARRIVO</span><h3>Nebula Run</h3><p>Racing · Arcade</p></div></div>
+          </article>
+
+          <article class="game-card coming-soon" data-game="pixel clash strategia">
+            <div class="game-visual pixel-visual" aria-hidden="true"><span>▦</span></div>
+            <div class="game-card-body"><div><span class="tag">IN ARRIVO</span><h3>Pixel Clash</h3><p>Strategy · PvP</p></div></div>
+          </article>
+        </div>
+        <p class="empty-results" id="empty-results" hidden>Nessun gioco corrisponde alla ricerca.</p>
+      </section>
+
+      <section class="about container" id="about">
+        <p class="eyebrow"><i></i> CRONOGAMES</p>
+        <h2>Entra, gioca, torna più forte.</h2>
+        <p>Il portale è progettato per partire subito: nessun download, solo giochi veloci e competitivi nel browser.</p>
+      </section>
+    </main>
+
+    <footer class="site-footer container"><span>© 2026 CronoGames</span><span>Built for players.</span></footer>
+
+    <div class="game-modal" id="game-modal" hidden>
+      <div class="modal-backdrop" data-close-game></div>
+      <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <header class="modal-header"><div><span class="tag live">● LIVE</span><h2 id="modal-title">Ship.io</h2></div><button class="modal-close" type="button" data-close-game aria-label="Chiudi Ship.io">×</button></header>
+        <iframe id="game-frame" title="Ship.io" src="" allow="fullscreen; autoplay" sandbox="allow-scripts allow-same-origin allow-pointer-lock"></iframe>
+      </section>
+    </div>
+
+    <div class="auth-modal" id="auth-modal" hidden>
+      <div class="modal-backdrop" data-close-auth></div>
+      <section class="auth-panel" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+        <button class="modal-close" type="button" data-close-auth aria-label="Chiudi accesso">×</button>
+        <p class="eyebrow"><i></i> CRONOGAMES ACCOUNT</p>
+        <h2 id="auth-title">Bentornato, pilota.</h2>
+        <p class="auth-intro" id="auth-intro">Accedi per conservare il tuo nickname e prepararti alle classifiche online.</p>
+        <div class="auth-tabs" role="tablist">
+          <button class="active" type="button" data-auth-mode="login" role="tab" aria-selected="true">Accedi</button>
+          <button type="button" data-auth-mode="register" role="tab" aria-selected="false">Crea account</button>
+        </div>
+        <form id="auth-form" novalidate>
+          <label>USERNAME<input id="auth-username" name="username" minlength="3" maxlength="16" autocomplete="username" placeholder="es. crono_pilot" required /></label>
+          <label>PASSWORD<input id="auth-password" name="password" type="password" minlength="8" autocomplete="current-password" placeholder="Almeno 8 caratteri" required /></label>
+          <label id="auth-confirm-wrap" hidden>CONFERMA PASSWORD<input id="auth-confirm" name="confirm" type="password" minlength="8" autocomplete="new-password" placeholder="Ripeti la password" /></label>
+          <p class="auth-error" id="auth-error" role="alert"></p>
+          <button class="button auth-submit" id="auth-submit" type="submit">Accedi <span>→</span></button>
+        </form>
+        <p class="auth-note">Password protette con hash crittografico; nessuna password è salvata nel browser.</p>
+      </section>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="script.js"></script>
+  </body>
+</html>
