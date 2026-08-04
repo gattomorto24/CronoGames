@@ -4,6 +4,8 @@ const PlayerShipScene := preload("res://scripts/player_ship.gd")
 const EnemyShipScene := preload("res://scripts/enemy_ship.gd")
 const EnergyOrbScene := preload("res://scripts/energy_orb.gd")
 const ProjectileScene := preload("res://scripts/projectile.gd")
+const RemoteShipScene := preload("res://scripts/remote_ship.gd")
+const OnlineSessionScene := preload("res://scripts/online_session.gd")
 
 const WORLD_SIZE := Vector2(4800.0, 3600.0)
 const ENEMY_COLORS := [Color("ff6687"), Color("ff9f68"), Color("d76aff"), Color("5ab6ff")]
@@ -25,6 +27,9 @@ var announcement_label: Label
 var rng := RandomNumberGenerator.new()
 var elapsed := 0.0
 var spawn_timer := 0.0
+var online_session: Node
+var remote_ships: Dictionary = {}
+var online_leaderboard: Array = []
 
 func _ready() -> void:
 	rng.randomize()
@@ -181,6 +186,10 @@ func start_game() -> void:
 	for index in 90:
 		spawn_orb(random_world_position())
 	build_hud()
+	build_touch_controls()
+	online_session = OnlineSessionScene.new()
+	add_child(online_session)
+	online_session.start_session(self, nickname_input.text, selected_skin)
 	announce("Raccogli energia. Tieni premuto il mouse per fare fuoco.")
 
 func spawn_enemy(index: int) -> void:
@@ -282,7 +291,7 @@ func build_hud() -> void:
 	announcement_label.offset_bottom = -36
 	announcement_label.add_theme_stylebox_override("normal", panel_style(Color(0.06, 0.06, 0.14, 0.86), Color("585279"), 9, 1))
 	hud_layer.add_child(announcement_label)
-	var controls := make_label("WASD / FRECCE · MOUSE PER MIRA E FUOCO", 10, Color("aaa7c0"))
+	var controls := make_label("WASD / FRECCE · MOUSE PER MIRA E FUOCO · TOUCH SU MOBILE", 10, Color("aaa7c0"))
 	controls.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	controls.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	controls.offset_left = -210
@@ -298,13 +307,40 @@ func update_hud() -> void:
 	health_label.text = "SCUDO  %d / %d" % [ceil(player.health), ceil(player.max_health)]
 	xp_label.text = "ENERGIA  %d / %d" % [floor(player.xp), floor(player.xp_next)]
 	score_label.text = "PUNTEGGIO  %d" % player.score
-	var rivals := enemies.filter(func(enemy: EnemyShip) -> bool: return is_instance_valid(enemy)).map(func(enemy: EnemyShip) -> Dictionary: return {"name": "RIVALE", "score": enemy.score_value + int(enemy.health)})
-	rivals.append({"name": nickname_input.text.to_upper(), "score": player.score})
-	rivals.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.score > b.score)
+	var rivals: Array = online_leaderboard.duplicate()
+	if rivals.is_empty():
+		rivals = enemies.filter(func(enemy: EnemyShip) -> bool: return is_instance_valid(enemy)).map(func(enemy: EnemyShip) -> Dictionary: return {"nickname": "RIVALE", "score": enemy.score_value + int(enemy.health)})
+		rivals.append({"nickname": nickname_input.text.to_upper(), "score": player.score})
+	rivals.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a.get("score", 0)) > int(b.get("score", 0)))
 	var rows := ["CLASSIFICA"]
 	for index in min(5, rivals.size()):
-		rows.append("%d.  %-12s %4d" % [index + 1, rivals[index].name, rivals[index].score])
+		rows.append("%d.  %-12s %4d" % [index + 1, str(rivals[index].get("nickname", "RIVALE")), int(rivals[index].get("score", 0))])
 	leaderboard_label.text = "\n".join(rows)
+
+func apply_online_state(state: Dictionary, local_id: String) -> void:
+	if str(state.get("game", "")) != "ship":
+		return
+	online_leaderboard = state.get("leaderboard", [])
+	var active := {}
+	for actor in state.get("players", []):
+		var actor_id := str(actor.get("id", ""))
+		if actor_id.is_empty() or actor_id == local_id:
+			continue
+		active[actor_id] = true
+		var remote: Node2D = remote_ships.get(actor_id)
+		if remote == null:
+			remote = RemoteShipScene.new()
+			remote.configure(str(actor.get("nickname", "Rivale")), str(actor.get("skin", "violet")), bool(actor.get("bot", false)))
+			remote_ships[actor_id] = remote
+			add_child(remote)
+		var position_scale := Vector2(WORLD_SIZE.x / float(state.get("world", 2600)), WORLD_SIZE.y / float(state.get("world", 2600)))
+		remote.apply_network_state(Vector2(float(actor.get("x", 0.0)), float(actor.get("y", 0.0))) * position_scale, float(actor.get("angle", 0.0)))
+	for actor_id in remote_ships.keys():
+		if active.has(actor_id):
+			continue
+		var stale: Node2D = remote_ships[actor_id]
+		stale.queue_free()
+		remote_ships.erase(actor_id)
 
 func announce(text: String) -> void:
 	if announcement_label != null:
@@ -319,6 +355,44 @@ func account_nickname() -> String:
 			if account is Dictionary and account.has("username"):
 				return String(account.username)
 	return "Pilota"
+
+func build_touch_controls() -> void:
+	if not is_touch_layout():
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = 6
+	add_child(layer)
+	var root := Control.new()
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(root)
+	add_touch_button(root, "←", "cg_ship_left", Vector2(24, -90), Vector2(58, 58))
+	add_touch_button(root, "↑", "cg_ship_up", Vector2(88, -154), Vector2(58, 58))
+	add_touch_button(root, "→", "cg_ship_right", Vector2(152, -90), Vector2(58, 58))
+	add_touch_button(root, "↓", "cg_ship_down", Vector2(88, -90), Vector2(58, 58))
+	add_touch_button(root, "FUOCO", "cg_ship_fire", Vector2(-116, -94), Vector2(92, 58), Control.PRESET_BOTTOM_RIGHT)
+
+func add_touch_button(root: Control, text_value: String, action: String, position_value: Vector2, size_value: Vector2, preset := Control.PRESET_BOTTOM_LEFT) -> void:
+	if not InputMap.has_action(action):
+		InputMap.add_action(action)
+	var button := Button.new()
+	button.text = text_value
+	button.set_anchors_preset(preset)
+	button.position = position_value
+	button.size = size_value
+	button.add_theme_font_size_override("font_size", 16 if text_value.length() == 1 else 11)
+	button.add_theme_stylebox_override("normal", panel_style(Color(0.07, 0.06, 0.16, 0.82), Color("b68cff"), 14, 1))
+	button.button_down.connect(func() -> void: Input.action_press(action))
+	button.button_up.connect(func() -> void: Input.action_release(action))
+	button.tree_exiting.connect(func() -> void: Input.action_release(action))
+	root.add_child(button)
+
+func is_touch_layout() -> bool:
+	if OS.has_feature("mobile"):
+		return true
+	if OS.has_feature("web"):
+		return bool(JavaScriptBridge.eval("window.matchMedia && window.matchMedia('(pointer: coarse)').matches", true))
+	return false
 
 func make_label(text: String, font_size: int, color: Color) -> Label:
 	var label := Label.new()

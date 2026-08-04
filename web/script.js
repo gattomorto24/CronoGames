@@ -15,10 +15,12 @@ const authError = document.querySelector('#auth-error');
 const confirmWrap = document.querySelector('#auth-confirm-wrap');
 const authSubmit = document.querySelector('#auth-submit');
 const authTitle = document.querySelector('#auth-title');
+const fullscreenGameButton = document.querySelector('#game-fullscreen');
 const authIntro = document.querySelector('#auth-intro');
 const gameDetails = {
   ship: { title: 'Ship.io', url: '/games/ship.io/client/index.html' },
   slither: { title: 'Slither.io', url: '/games/slither.io/client/index.html' },
+  parkour: { title: 'Crono Parkour', url: '/games/parkour/client/index.html' },
 };
 let lastFocusedElement;
 let toastTimer;
@@ -47,14 +49,37 @@ function openGame(event) {
   modal.hidden = false;
   document.body.style.overflow = 'hidden';
   frame.src = `${localBaseUrl()}${game.url}`;
-  document.querySelector('.modal-close').focus();
+  fullscreenGameButton.focus();
 }
 
 function closeGame() {
+  if (document.fullscreenElement) document.exitFullscreen?.();
   modal.hidden = true;
   document.body.style.overflow = '';
   frame.src = '';
   lastFocusedElement?.focus();
+}
+
+async function toggleGameFullscreen() {
+  const panel = document.querySelector('.modal-panel');
+  try {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen?.();
+    } else if (panel.requestFullscreen) {
+      await panel.requestFullscreen();
+    } else if (panel.webkitRequestFullscreen) {
+      panel.webkitRequestFullscreen();
+    }
+  } catch {
+    showToast('Il browser non consente lo schermo intero in questo momento.');
+  }
+}
+
+function updateFullscreenButton() {
+  const active = Boolean(document.fullscreenElement);
+  fullscreenGameButton.textContent = active ? '⤢' : '⛶';
+  fullscreenGameButton.title = active ? 'Esci dallo schermo intero' : 'Schermo intero';
+  fullscreenGameButton.setAttribute('aria-label', fullscreenGameButton.title);
 }
 
 function showToast(message) {
@@ -125,6 +150,8 @@ function closeAuth() {
 
 gameLaunchers.forEach((button) => button.addEventListener('click', openGame));
 closeGameButtons.forEach((button) => button.addEventListener('click', closeGame));
+fullscreenGameButton.addEventListener('click', toggleGameFullscreen);
+document.addEventListener('fullscreenchange', updateFullscreenButton);
 document.querySelectorAll('[data-open-auth]').forEach((button) => button.addEventListener('click', () => openAuth(button.dataset.openAuth)));
 document.querySelectorAll('[data-close-auth]').forEach((button) => button.addEventListener('click', closeAuth));
 document.querySelectorAll('[data-auth-mode]').forEach((button) => button.addEventListener('click', () => setAuthMode(button.dataset.authMode)));

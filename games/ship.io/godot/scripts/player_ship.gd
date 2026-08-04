@@ -37,18 +37,22 @@ func _process(delta: float) -> void:
 	if health <= 0.0:
 		return
 	var input_vector := Vector2(
-		float(Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT)) - float(Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT)),
-		float(Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN)) - float(Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP))
+		float(Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT) or Input.is_action_pressed("cg_ship_right")) - float(Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT) or Input.is_action_pressed("cg_ship_left")),
+		float(Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN) or Input.is_action_pressed("cg_ship_down")) - float(Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP) or Input.is_action_pressed("cg_ship_up"))
 	)
 	velocity = velocity.move_toward(input_vector.normalized() * speed, speed * 8.0 * delta)
 	position += velocity * delta
 	position.x = clampf(position.x, 60.0, 4740.0)
 	position.y = clampf(position.y, 60.0, 3540.0)
-	look_at(get_global_mouse_position())
+	if Input.is_action_pressed("cg_ship_left") or Input.is_action_pressed("cg_ship_right") or Input.is_action_pressed("cg_ship_up") or Input.is_action_pressed("cg_ship_down"):
+		if input_vector.length() > 0.1:
+			rotation = input_vector.angle()
+	else:
+		look_at(get_global_mouse_position())
 	fire_timer = maxf(0.0, fire_timer - delta)
 	invulnerability = maxf(0.0, invulnerability - delta)
 	thrust_phase += delta * (8.0 + velocity.length() * 0.025)
-	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and fire_timer <= 0.0:
+	if (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_action_pressed("cg_ship_fire")) and fire_timer <= 0.0:
 		fire_timer = fire_interval
 		game.spawn_projectile(global_position + Vector2.RIGHT.rotated(rotation) * 30.0, Vector2.RIGHT.rotated(rotation), 20.0 + level * 2.0, true, ship_color)
 	queue_redraw()

@@ -2,6 +2,7 @@ extends Node2D
 
 const SnakeScene := preload("res://scripts/snake.gd")
 const FoodScene := preload("res://scripts/food.gd")
+const OnlineSessionScene := preload("res://scripts/online_session.gd")
 const WORLD_SIZE := Vector2(5200.0, 4000.0)
 const SNAKE_COLORS := [Color("78f4ad"), Color("ff7faf"), Color("69b9ff"), Color("ffc963"), Color("c27cff"), Color("ff9666")]
 const FOOD_COLORS := [Color("ffe56f"), Color("ff91cc"), Color("70eaff"), Color("9aff82"), Color("b688ff")]
@@ -20,6 +21,9 @@ var leaderboard_label: Label
 var announce_label: Label
 var rng := RandomNumberGenerator.new()
 var food_timer := 0.0
+var online_session: Node
+var online_snakes: Dictionary = {}
+var online_leaderboard: Array = []
 
 func _ready() -> void:
 	rng.randomize()
@@ -33,11 +37,11 @@ func _process(delta: float) -> void:
 	for snake in snakes.duplicate():
 		if not is_instance_valid(snake) or not snake.alive:
 			continue
-		if snake != player:
+		if snake != player and not snake.network_controlled:
 			snake.step_ai(delta, player.global_position)
 	collect_food(player)
 	for snake in snakes:
-		if is_instance_valid(snake) and snake != player:
+		if is_instance_valid(snake) and snake != player and not snake.network_controlled:
 			collect_food(snake)
 	check_collisions()
 	food_timer += delta
@@ -139,6 +143,10 @@ func start_game() -> void:
 	for index in 180:
 		spawn_food(random_world_position(), rng.randi_range(1, 3))
 	build_hud()
+	build_touch_controls()
+	online_session = OnlineSessionScene.new()
+	add_child(online_session)
+	online_session.start_session(self, nickname_input.text, ["mint", "pink", "sky", "gold"][selected_skin])
 	announce("Mangia le sfere luminose. Evita il corpo degli altri serpenti.")
 
 func spawn_bot(index: int) -> void:
@@ -246,12 +254,42 @@ func update_hud() -> void:
 		return
 	length_label.text = "LUNGHEZZA  %d" % player.segments.size()
 	score_label.text = "PUNTEGGIO  %d" % player.score
-	var ranking := snakes.filter(func(snake: SlitherSnake) -> bool: return is_instance_valid(snake)).map(func(snake: SlitherSnake) -> Dictionary: return {"name": snake.snake_name, "size": snake.segments.size()})
-	ranking.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.size > b.size)
+	var ranking: Array = online_leaderboard.duplicate()
+	if ranking.is_empty():
+		ranking = snakes.filter(func(snake: SlitherSnake) -> bool: return is_instance_valid(snake)).map(func(snake: SlitherSnake) -> Dictionary: return {"nickname": snake.snake_name, "score": snake.segments.size()})
+	ranking.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a.get("score", 0)) > int(b.get("score", 0)))
 	var rows := ["CLASSIFICA"]
 	for index in min(5, ranking.size()):
-		rows.append("%d.  %-12s %3d" % [index + 1, ranking[index].name, ranking[index].size])
+		rows.append("%d.  %-12s %3d" % [index + 1, str(ranking[index].get("nickname", "RIVALE")), int(ranking[index].get("score", 0))])
 	leaderboard_label.text = "\n".join(rows)
+
+func apply_online_state(state: Dictionary, local_id: String) -> void:
+	if str(state.get("game", "")) != "slither":
+		return
+	online_leaderboard = state.get("leaderboard", [])
+	var active := {}
+	for actor in state.get("players", []):
+		var actor_id := str(actor.get("id", ""))
+		if actor_id.is_empty() or actor_id == local_id:
+			continue
+		active[actor_id] = true
+		var snake: SlitherSnake = online_snakes.get(actor_id)
+		if snake == null:
+			snake = SnakeScene.new()
+			var color_index: int = int(abs(actor_id.hash())) % SNAKE_COLORS.size()
+			snake.configure(Vector2(float(actor.get("x", 0.0)), float(actor.get("y", 0.0)) * WORLD_SIZE.y / float(state.get("world", 5200))), str(actor.get("nickname", "Rivale")), SNAKE_COLORS[color_index], false)
+			snake.network_controlled = true
+			online_snakes[actor_id] = snake
+			snakes.append(snake)
+			add_child(snake)
+		snake.apply_network_state(Vector2(float(actor.get("x", 0.0)), float(actor.get("y", 0.0)) * WORLD_SIZE.y / float(state.get("world", 5200))), float(actor.get("angle", 0.0)), int(actor.get("length", 32)))
+	for actor_id in online_snakes.keys():
+		if active.has(actor_id):
+			continue
+		var stale: SlitherSnake = online_snakes[actor_id]
+		snakes.erase(stale)
+		stale.queue_free()
+		online_snakes.erase(actor_id)
 
 func account_nickname() -> String:
 	if OS.has_feature("web"):
@@ -262,6 +300,44 @@ func account_nickname() -> String:
 			if account is Dictionary and account.has("username"):
 				return String(account.username)
 	return "Pilota"
+
+func build_touch_controls() -> void:
+	if not is_touch_layout():
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = 6
+	add_child(layer)
+	var root := Control.new()
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(root)
+	add_touch_button(root, "←", "cg_slither_left", Vector2(24, -90), Vector2(58, 58))
+	add_touch_button(root, "↑", "cg_slither_up", Vector2(88, -154), Vector2(58, 58))
+	add_touch_button(root, "→", "cg_slither_right", Vector2(152, -90), Vector2(58, 58))
+	add_touch_button(root, "↓", "cg_slither_down", Vector2(88, -90), Vector2(58, 58))
+	add_touch_button(root, "BOOST", "cg_slither_boost", Vector2(-116, -94), Vector2(92, 58), Control.PRESET_BOTTOM_RIGHT)
+
+func add_touch_button(root: Control, text_value: String, action: String, position_value: Vector2, size_value: Vector2, preset := Control.PRESET_BOTTOM_LEFT) -> void:
+	if not InputMap.has_action(action):
+		InputMap.add_action(action)
+	var button := Button.new()
+	button.text = text_value
+	button.set_anchors_preset(preset)
+	button.position = position_value
+	button.size = size_value
+	button.add_theme_font_size_override("font_size", 16 if text_value.length() == 1 else 11)
+	button.add_theme_stylebox_override("normal", panel_style(Color(0.03, 0.14, 0.14, 0.82), Color("7cf4bd"), 14, 1))
+	button.button_down.connect(func() -> void: Input.action_press(action))
+	button.button_up.connect(func() -> void: Input.action_release(action))
+	button.tree_exiting.connect(func() -> void: Input.action_release(action))
+	root.add_child(button)
+
+func is_touch_layout() -> bool:
+	if OS.has_feature("mobile"):
+		return true
+	if OS.has_feature("web"):
+		return bool(JavaScriptBridge.eval("window.matchMedia && window.matchMedia('(pointer: coarse)').matches", true))
+	return false
 
 func announce(text: String) -> void:
 	if announce_label != null:

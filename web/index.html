@@ -112,6 +112,14 @@
             </div>
           </article>
 
+          <article class="game-card game-card--parkour" data-game="crono parkour multiplayer corsa piattaforme godot">
+            <div class="game-visual parkour-visual" aria-hidden="true"><span class="parkour-track"></span><span class="parkour-runner">◆</span><span class="parkour-gate">⌁</span></div>
+            <div class="game-card-body">
+              <div><span class="tag live">● LIVE</span><h3>Crono Parkour</h3><p>Multiplayer · Parkour</p></div>
+              <button class="round-play launch-game" type="button" data-game-id="parkour" aria-label="Gioca a Crono Parkour">▶</button>
+            </div>
+          </article>
+
           <article class="game-card coming-soon" data-game="nebula run corsa spaziale">
             <div class="game-visual nebula-visual" aria-hidden="true"><span>✦</span></div>
             <div class="game-card-body"><div><span class="tag">IN ARRIVO</span><h3>Nebula Run</h3><p>Racing · Arcade</p></div></div>
@@ -137,8 +145,8 @@
     <div class="game-modal" id="game-modal" hidden>
       <div class="modal-backdrop" data-close-game></div>
       <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-        <header class="modal-header"><div><span class="tag live">● LIVE</span><h2 id="modal-title">Ship.io</h2></div><button class="modal-close" type="button" data-close-game aria-label="Chiudi Ship.io">×</button></header>
-        <iframe id="game-frame" title="Ship.io" src="" allow="fullscreen; autoplay" sandbox="allow-scripts allow-same-origin allow-pointer-lock"></iframe>
+        <header class="modal-header"><div><span class="tag live">● LIVE</span><h2 id="modal-title">Ship.io</h2></div><div class="modal-actions"><button class="modal-fullscreen" id="game-fullscreen" type="button" aria-label="Apri il gioco a schermo intero" title="Schermo intero">⛶</button><button class="modal-close" type="button" data-close-game aria-label="Chiudi Ship.io">×</button></div></header>
+        <iframe id="game-frame" title="Ship.io" src="" allow="fullscreen; autoplay; gamepad" sandbox="allow-scripts allow-same-origin allow-pointer-lock"></iframe>
       </section>
     </div>
 

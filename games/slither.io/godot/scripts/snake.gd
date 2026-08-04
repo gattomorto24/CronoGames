@@ -11,6 +11,7 @@ var base_speed := 215.0
 var target_length := 32
 var alive := true
 var is_player := false
+var network_controlled := false
 var ai_phase := 0.0
 var score := 0
 
@@ -27,19 +28,22 @@ func configure(start: Vector2, display_name: String, snake_tint: Color, player_c
 
 func step_player(delta: float) -> void:
 	var mouse_direction := global_position.direction_to(get_global_mouse_position())
-	if mouse_direction.length() > 0.1:
+	if mouse_direction.length() > 0.1 and not has_touch_direction():
 		direction = direction.slerp(mouse_direction, minf(1.0, delta * 8.5)).normalized()
 	var key_direction := Vector2(
-		float(Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT)) - float(Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT)),
-		float(Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN)) - float(Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP))
+		float(Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT) or Input.is_action_pressed("cg_slither_right")) - float(Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT) or Input.is_action_pressed("cg_slither_left")),
+		float(Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN) or Input.is_action_pressed("cg_slither_down")) - float(Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP) or Input.is_action_pressed("cg_slither_up"))
 	)
 	if key_direction.length() > 0.1:
 		direction = direction.slerp(key_direction.normalized(), minf(1.0, delta * 8.5)).normalized()
-	var boosting := Input.is_key_pressed(KEY_SPACE) and segments.size() > 20
+	var boosting := (Input.is_key_pressed(KEY_SPACE) or Input.is_action_pressed("cg_slither_boost")) and segments.size() > 20
 	speed = base_speed * (1.46 if boosting else 1.0)
 	if boosting and randi() % 8 == 0:
 		target_length = max(20, target_length - 1)
 	move_forward(delta)
+
+func has_touch_direction() -> bool:
+	return Input.is_action_pressed("cg_slither_left") or Input.is_action_pressed("cg_slither_right") or Input.is_action_pressed("cg_slither_up") or Input.is_action_pressed("cg_slither_down")
 
 func step_ai(delta: float, target: Vector2) -> void:
 	ai_phase += delta * 0.8
@@ -48,6 +52,20 @@ func step_ai(delta: float, target: Vector2) -> void:
 	direction = direction.slerp(desired, delta * 1.55).normalized()
 	speed = base_speed * 0.82
 	move_forward(delta)
+
+func apply_network_state(target_position: Vector2, target_angle: float, target_size: int) -> void:
+	network_controlled = true
+	direction = Vector2.RIGHT.rotated(target_angle)
+	global_position = global_position.lerp(target_position, 0.22)
+	target_length = clampi(target_size, 20, 110)
+	if segments.is_empty():
+		for index in target_length:
+			segments.append(global_position - direction * index * 8.0)
+	else:
+		segments.push_front(global_position)
+		while segments.size() > target_length:
+			segments.pop_back()
+	queue_redraw()
 
 func move_forward(delta: float) -> void:
 	if not alive:
