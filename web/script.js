@@ -26,7 +26,12 @@ const inviteLink = document.querySelector('#invite-link');
 const gameDetails = {
   ship: { title: 'Ship.io', url: '/games/ship.io/client/index.html' },
   slither: { title: 'Slither.io', url: '/games/slither.io/client/index.html' },
-  parkour: { title: 'Crono Parkour', url: '/games/parkour/client/index.html' },
+  parkour: {
+    title: 'Crono Parkour',
+    url: '/games/parkour/client/index.html',
+    mobileTitle: 'Crono Parkour Mobile',
+    mobileUrl: '/games/parkour-mobile/client/index.html',
+  },
 };
 let lastFocusedElement;
 let toastTimer;
@@ -55,16 +60,24 @@ function isTouchDevice() {
   return matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
 }
 
+function clientForDevice(game) {
+  if (game.mobileUrl && isTouchDevice()) {
+    return { title: game.mobileTitle || game.title, url: game.mobileUrl };
+  }
+  return { title: game.title, url: game.url };
+}
+
 function launchGame(gameId, roomCode = '', shouldAutoFullscreen = true) {
   const game = gameDetails[gameId];
   if (!game) return;
+  const client = clientForDevice(game);
   lastFocusedElement = document.activeElement;
-  document.querySelector('#modal-title').textContent = game.title;
-  frame.title = game.title;
+  document.querySelector('#modal-title').textContent = client.title;
+  frame.title = client.title;
   modal.hidden = false;
   document.body.style.overflow = 'hidden';
   const room = roomCode.trim().toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 8);
-  frame.src = `${localBaseUrl()}${game.url}${room ? `?room=${encodeURIComponent(room)}` : ''}`;
+  frame.src = `${localBaseUrl()}${client.url}${room ? `?room=${encodeURIComponent(room)}` : ''}`;
   fullscreenGameButton.focus();
   if (shouldAutoFullscreen && isTouchDevice()) requestGameFullscreen();
 }

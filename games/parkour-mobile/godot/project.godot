@@ -1,0 +1,27 @@
+; Dedicated lightweight project for touch devices. It intentionally contains no
+; desktop level, animation graph, high-poly character, or desktop input stack.
+config_version=5
+
+[application]
+
+config/name="Crono Parkour Mobile"
+run/main_scene="res://scenes/mobile_parkour.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility", "Mobile")
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/resizable=true
+window/stretch/mode="canvas_items"
+window/handheld/orientation=1
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+anti_aliasing/quality/msaa_3d=0
+anti_aliasing/quality/msaa_2d=0
+anti_aliasing/quality/screen_space_aa=0
+limits/rendering/max_lights_per_object=2

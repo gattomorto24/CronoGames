@@ -23,6 +23,8 @@
 - `games/slither.io/client/`: export WebGL/HTML5 di Slither.io.
 - `games/parkour/godot/`: sorgente Godot 4 di Crono Parkour, configurato per WebGL (GL Compatibility).
 - `games/parkour/client/`: export WebGL/HTML5 di Crono Parkour.
+- `games/parkour-mobile/godot/`: gioco Godot separato per telefono: livello low-poly, fisica, camera e input touch nativi, senza caricare lo stack desktop.
+- `games/parkour-mobile/client/`: export WebGL/HTML5 selezionato automaticamente dal portale sui dispositivi touch.
 - `games/ship.io/server/`: static hosting, WebSocket e API account locale.
 
 ## Stanze multiplayer e bot
