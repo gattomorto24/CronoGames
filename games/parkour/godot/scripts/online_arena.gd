@@ -10,6 +10,8 @@ var server_url := ""
 var send_timer := 0.0
 var remote_avatars: Dictionary = {}
 var status_label: Label
+var room_code := ""
+var join_sent := false
 
 func _ready() -> void:
 	build_status()
@@ -21,6 +23,7 @@ func _exit_tree() -> void:
 	socket.close()
 
 func connect_to_room() -> void:
+	room_code = room_code_from_url()
 	server_url = resolve_server_url()
 	if server_url.is_empty():
 		set_status("OFFLINE · Avvia il server CronoGames per le stanze online")
@@ -33,6 +36,10 @@ func connect_to_room() -> void:
 func _process(delta: float) -> void:
 	socket.poll()
 	if socket.get_ready_state() == WebSocketPeer.STATE_OPEN:
+		if not join_sent:
+			join_sent = true
+			socket.send_text(JSON.stringify({"type": "join", "game": GAME_ID, "nickname": player_nickname(), "roomCode": room_code}))
+			return
 		while socket.get_available_packet_count() > 0:
 			consume_message(socket.get_packet().get_string_from_utf8())
 		send_timer += delta
@@ -49,10 +56,13 @@ func consume_message(raw: String) -> void:
 	if decoded.type == "joined":
 		player_id = str(decoded.id)
 		room_id = str(decoded.roomId)
-		set_status("ONLINE · %s · stanza %s" % [str(decoded.capacity), room_id])
+		var code = str(decoded.get("roomCode", ""))
+		set_status("ONLINE · %s" % ("codice " + code if not code.is_empty() else "stanza " + room_id))
 	elif decoded.type == "state":
 		apply_state(decoded)
 	elif decoded.type == "notice":
+		set_status(str(decoded.message))
+	elif decoded.type == "error":
 		set_status(str(decoded.message))
 
 func current_keys() -> Array[String]:
@@ -128,6 +138,7 @@ func build_status() -> void:
 	status_label.add_theme_color_override("font_outline_color", Color("0a1020"))
 	status_label.add_theme_constant_override("outline_size", 5)
 	layer.add_child(status_label)
+	status_label.visible = not is_touch_device()
 	set_status("PREPARAZIONE ARENA…")
 
 func set_status(message: String) -> void:
@@ -146,6 +157,20 @@ func resolve_server_url() -> String:
 			var port = str(JavaScriptBridge.eval("window.location.port || '3001'", true))
 			return "%s//%s:%s" % [protocol, hostname, port]
 	return OS.get_environment("CRONOGAMES_WS_URL")
+
+func room_code_from_url() -> String:
+	if OS.has_feature("web"):
+		return str(JavaScriptBridge.eval("new URLSearchParams(window.location.search).get('room') || ''", true)).to_upper().replace(" ", "")
+	return ""
+
+func player_nickname() -> String:
+	if OS.has_feature("web"):
+		var stored = JavaScriptBridge.get_interface("window").localStorage.getItem("cronogames_account")
+		if stored:
+			var account = JSON.parse_string(stored)
+			if account is Dictionary and account.has("username"):
+				return str(account.username)
+	return "Runner"
 
 func is_touch_device() -> bool:
 	if OS.has_feature("mobile"):

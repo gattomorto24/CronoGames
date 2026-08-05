@@ -17,6 +17,12 @@ const authSubmit = document.querySelector('#auth-submit');
 const authTitle = document.querySelector('#auth-title');
 const fullscreenGameButton = document.querySelector('#game-fullscreen');
 const authIntro = document.querySelector('#auth-intro');
+const hostModal = document.querySelector('#host-modal');
+const hostCreateForm = document.querySelector('#host-create-form');
+const hostJoinForm = document.querySelector('#host-join-form');
+const inviteResult = document.querySelector('#invite-result');
+const inviteCode = document.querySelector('#invite-code');
+const inviteLink = document.querySelector('#invite-link');
 const gameDetails = {
   ship: { title: 'Ship.io', url: '/games/ship.io/client/index.html' },
   slither: { title: 'Slither.io', url: '/games/slither.io/client/index.html' },
@@ -37,19 +43,34 @@ function localBaseUrl() {
 }
 
 function hasAccountBackend() {
-  return location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  return isLocalNetworkHost();
 }
 
-function openGame(event) {
-  const game = gameDetails[event.currentTarget.dataset.gameId];
+function isLocalNetworkHost() {
+  const host = location.hostname;
+  return host === 'localhost' || /^127\./.test(host) || /^10\./.test(host) || /^192\.168\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host) || host.endsWith('.local');
+}
+
+function isTouchDevice() {
+  return matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+}
+
+function launchGame(gameId, roomCode = '', shouldAutoFullscreen = true) {
+  const game = gameDetails[gameId];
   if (!game) return;
   lastFocusedElement = document.activeElement;
   document.querySelector('#modal-title').textContent = game.title;
   frame.title = game.title;
   modal.hidden = false;
   document.body.style.overflow = 'hidden';
-  frame.src = `${localBaseUrl()}${game.url}`;
+  const room = roomCode.trim().toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 8);
+  frame.src = `${localBaseUrl()}${game.url}${room ? `?room=${encodeURIComponent(room)}` : ''}`;
   fullscreenGameButton.focus();
+  if (shouldAutoFullscreen && isTouchDevice()) requestGameFullscreen();
+}
+
+function openGame(event) {
+  launchGame(event.currentTarget.dataset.gameId);
 }
 
 function closeGame() {
@@ -60,19 +81,22 @@ function closeGame() {
   lastFocusedElement?.focus();
 }
 
-async function toggleGameFullscreen() {
+async function requestGameFullscreen() {
   const panel = document.querySelector('.modal-panel');
   try {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen?.();
-    } else if (panel.requestFullscreen) {
+    if (!document.fullscreenElement && panel.requestFullscreen) {
       await panel.requestFullscreen();
-    } else if (panel.webkitRequestFullscreen) {
+    } else if (!document.fullscreenElement && panel.webkitRequestFullscreen) {
       panel.webkitRequestFullscreen();
     }
   } catch {
     showToast('Il browser non consente lo schermo intero in questo momento.');
   }
+}
+
+async function toggleGameFullscreen() {
+  if (document.fullscreenElement) await document.exitFullscreen?.();
+  else await requestGameFullscreen();
 }
 
 function updateFullscreenButton() {
@@ -148,6 +172,40 @@ function closeAuth() {
   lastFocusedElement?.focus();
 }
 
+function setHostMode(mode) {
+  const creating = mode === 'create';
+  document.querySelectorAll('[data-host-mode]').forEach((button) => {
+    const active = button.dataset.hostMode === mode;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', String(active));
+  });
+  hostCreateForm.hidden = !creating;
+  hostJoinForm.hidden = creating;
+  inviteResult.hidden = true;
+}
+
+function openHost() {
+  if (!isLocalNetworkHost()) {
+    showToast('Per ospitare, apri CronoGames dal Mac host tramite il link LAN mostrato da start-local-server.command.');
+    return;
+  }
+  lastFocusedElement = document.activeElement;
+  setHostMode('create');
+  hostModal.hidden = false;
+  document.body.style.overflow = 'hidden';
+  document.querySelector('#host-code').focus();
+}
+
+function closeHost() {
+  hostModal.hidden = true;
+  document.body.style.overflow = '';
+  lastFocusedElement?.focus();
+}
+
+function normalizedRoomCode(value) {
+  return value.trim().toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 8);
+}
+
 gameLaunchers.forEach((button) => button.addEventListener('click', openGame));
 closeGameButtons.forEach((button) => button.addEventListener('click', closeGame));
 fullscreenGameButton.addEventListener('click', toggleGameFullscreen);
@@ -155,10 +213,14 @@ document.addEventListener('fullscreenchange', updateFullscreenButton);
 document.querySelectorAll('[data-open-auth]').forEach((button) => button.addEventListener('click', () => openAuth(button.dataset.openAuth)));
 document.querySelectorAll('[data-close-auth]').forEach((button) => button.addEventListener('click', closeAuth));
 document.querySelectorAll('[data-auth-mode]').forEach((button) => button.addEventListener('click', () => setAuthMode(button.dataset.authMode)));
+document.querySelectorAll('[data-open-host]').forEach((button) => button.addEventListener('click', openHost));
+document.querySelectorAll('[data-close-host]').forEach((button) => button.addEventListener('click', closeHost));
+document.querySelectorAll('[data-host-mode]').forEach((button) => button.addEventListener('click', () => setHostMode(button.dataset.hostMode)));
 document.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
   if (!modal.hidden) closeGame();
   if (!authModal.hidden) closeAuth();
+  if (!hostModal.hidden) closeHost();
 });
 
 authForm.addEventListener('submit', async (event) => {
@@ -192,6 +254,42 @@ document.querySelector('#logout-button').addEventListener('click', async () => {
   showToast('Sessione terminata.');
 });
 
+hostCreateForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const submit = hostCreateForm.querySelector('button[type="submit"]');
+  submit.disabled = true;
+  try {
+    const result = await api('/api/rooms/create', { method: 'POST', body: JSON.stringify({ game: document.querySelector('#host-game').value, code: normalizedRoomCode(document.querySelector('#host-code').value) }) });
+    inviteCode.textContent = result.code;
+    inviteLink.value = result.inviteUrl;
+    inviteResult.hidden = false;
+    showToast(`Server pronto: codice ${result.code}.`);
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    submit.disabled = false;
+  }
+});
+
+hostJoinForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const code = normalizedRoomCode(document.querySelector('#join-code').value);
+  if (code.length < 5) return showToast('Inserisci un codice stanza valido.');
+  closeHost();
+  launchGame(document.querySelector('#join-game').value, code);
+});
+
+document.querySelector('#copy-invite').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(inviteLink.value);
+    showToast('Link di invito copiato.');
+  } catch {
+    inviteLink.select();
+    document.execCommand('copy');
+    showToast('Link selezionato: copialo e invialo agli amici.');
+  }
+});
+
 searchInput.addEventListener('input', ({ target }) => {
   const query = target.value.trim().toLocaleLowerCase('it');
   const visible = cards.filter((card) => {
@@ -207,4 +305,11 @@ if (hasAccountBackend()) {
   api('/api/auth/me').then(({ account: currentAccount }) => setAccount(currentAccount)).catch(() => setAccount(null));
 } else {
   setAccount(null);
+}
+
+const inviteParams = new URLSearchParams(location.search);
+const inviteGame = inviteParams.get('game');
+const inviteRoom = normalizedRoomCode(inviteParams.get('room') || '');
+if (inviteGame && inviteRoom.length >= 5 && gameDetails[inviteGame]) {
+  window.setTimeout(() => launchGame(inviteGame, inviteRoom, false), 80);
 }

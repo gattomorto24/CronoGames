@@ -34,6 +34,8 @@
           <i></i><strong id="online-players">248</strong> online
         </span>
 
+        <button class="text-button host-button" type="button" data-open-host>Apri server</button>
+
         <div class="auth-actions" id="auth-guest">
           <button class="text-button" type="button" data-open-auth="login">Accedi</button>
           <button class="button compact" type="button" data-open-auth="register">Registrati</button>
@@ -169,6 +171,32 @@
           <button class="button auth-submit" id="auth-submit" type="submit">Accedi <span>→</span></button>
         </form>
         <p class="auth-note">Password protette con hash crittografico; nessuna password è salvata nel browser.</p>
+      </section>
+    </div>
+
+    <div class="auth-modal" id="host-modal" hidden>
+      <div class="modal-backdrop" data-close-host></div>
+      <section class="auth-panel host-panel" role="dialog" aria-modal="true" aria-labelledby="host-title">
+        <button class="modal-close" type="button" data-close-host aria-label="Chiudi server locale">×</button>
+        <p class="eyebrow"><i></i> GIOCA CON GLI AMICI</p>
+        <h2 id="host-title">Server locale</h2>
+        <p class="auth-intro">Crea una stanza privata sul Mac che ospita CronoGames, poi condividi link o codice con gli amici sulla stessa Wi‑Fi.</p>
+        <div class="auth-tabs" role="tablist">
+          <button class="active" type="button" data-host-mode="create" role="tab" aria-selected="true">Apri server</button>
+          <button type="button" data-host-mode="join" role="tab" aria-selected="false">Entra con codice</button>
+        </div>
+        <form id="host-create-form">
+          <label>GIOCO<select id="host-game"><option value="ship">Ship.io</option><option value="slither">Slither.io</option><option value="parkour">Crono Parkour</option></select></label>
+          <label>CODICE STANZA <span class="form-optional">OPZIONALE</span><input id="host-code" maxlength="8" placeholder="es. NOVA42" autocomplete="off" /></label>
+          <button class="button auth-submit" type="submit">Apri server <span>→</span></button>
+        </form>
+        <form id="host-join-form" hidden>
+          <label>GIOCO<select id="join-game"><option value="ship">Ship.io</option><option value="slither">Slither.io</option><option value="parkour">Crono Parkour</option></select></label>
+          <label>CODICE AMICO<input id="join-code" minlength="5" maxlength="8" placeholder="es. NOVA42" autocomplete="off" required /></label>
+          <button class="button auth-submit" type="submit">Entra nella stanza <span>→</span></button>
+        </form>
+        <div class="invite-result" id="invite-result" hidden><span>CODICE STANZA</span><strong id="invite-code"></strong><input id="invite-link" readonly /><button class="text-button" id="copy-invite" type="button">Copia invito</button></div>
+        <p class="auth-note" id="host-note">Prima avvia <code>start-local-server.command</code>. I browser non possono accendere processi sul Mac in autonomia.</p>
       </section>
     </div>
 

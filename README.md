@@ -33,7 +33,7 @@ Per un deploy pubblico, GitHub Pages ospita soltanto i file WebGL: è necessario
 
 ## Partita locale con amici (LAN)
 
-Fai doppio clic su `games/ship.io/server/start-local-server.command` sul Mac che ospita la partita. Il Terminale mostra un link `http://192.168.x.x:3001/web/index.html`: invialo agli amici collegati alla stessa Wi‑Fi. Il portale e tutti e tre i giochi riconoscono automaticamente l'indirizzo LAN e si connettono al WebSocket del Mac ospitante. I dettagli e le cautele di rete sono in `games/ship.io/server/LOCAL_SERVER.md`.
+Fai doppio clic su `games/ship.io/server/start-local-server.command` sul Mac che ospita la partita. Il Terminale mostra un link `http://192.168.x.x:3001/web/index.html`: aprilo e usa **Apri server** nel menu per scegliere il gioco e generare un codice stanza. Il portale fornisce anche un link di invito da condividere con gli amici sulla stessa Wi‑Fi. Il codice mantiene tutti nella stessa stanza; fino a 20 giocatori reali possono entrare e gli altri slot sono riempiti dai bot. I dettagli e le cautele di rete sono in `games/ship.io/server/LOCAL_SERVER.md`.
 
 ## Account locale
 

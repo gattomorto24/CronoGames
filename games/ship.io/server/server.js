@@ -61,6 +61,21 @@ async function readJson(request) {
 
 async function handleApi(request, response, pathname) {
   try {
+    if (request.method === 'POST' && pathname === '/api/rooms/create') {
+      const body = await readJson(request);
+      const game = gameFrom(body.game);
+      let code = roomCode(body.code);
+      if (!code) code = makeRoomCode();
+      if ([...rooms.values()].some((room) => room.code === code)) return sendJson(response, 409, { error: 'Codice già in uso. Riprova.' });
+      const room = createRoom(game, code);
+      ensureBots(room);
+      const host = String(request.headers.host || `localhost:${PORT}`).replace(/[^a-zA-Z0-9.:[\]-]/g, '');
+      const protocol = request.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+      const preferredLanUrl = localNetworkUrls()[0];
+      const inviteOrigin = /^(localhost|127\.0\.0\.1)(?::\d+)?$/i.test(host) && preferredLanUrl ? new URL(preferredLanUrl).origin : `${protocol}://${host}`;
+      const inviteUrl = `${inviteOrigin}/web/index.html?game=${encodeURIComponent(game)}&room=${encodeURIComponent(code)}`;
+      return sendJson(response, 201, { room: roomSummary(room), code, inviteUrl });
+    }
     const token = auth.readCookie(request.headers.cookie, 'cg_session');
     if (request.method === 'GET' && pathname === '/api/auth/me') return sendJson(response, 200, { account: await auth.accountFromSession(token) });
     if (request.method === 'POST' && pathname === '/api/auth/register') {
@@ -91,16 +106,19 @@ function id(prefix) { entitySequence += 1; return `${prefix}-${entitySequence.to
 function safeNickname(value, fallback = 'Pilota') { return String(value || fallback).trim().replace(/[<>]/g, '').slice(0, 16) || fallback; }
 function safeSkin(value) { return ['violet', 'cyan', 'amber', 'mint', 'pink', 'sky', 'gold'].includes(value) ? value : 'violet'; }
 function gameFrom(value) { return Object.hasOwn(GAME_CONFIG, value) ? value : 'ship'; }
+function roomCode(value) { const code = String(value || '').toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 8); return code.length >= 5 ? code : ''; }
+function makeRoomCode() { const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let code = ''; do { code = Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join(''); } while ([...rooms.values()].some((room) => room.code === code)); return code; }
 
-function createRoom(game) {
+function createRoom(game, code = '') {
   const config = GAME_CONFIG[game];
-  const room = { id: `${game}-${roomSequence++}`, game, config, players: new Map(), bullets: [], energy: [], lastSpawn: 0 };
+  const room = { id: `${game}-${roomSequence++}`, code, game, config, players: new Map(), bullets: [], energy: [], lastSpawn: 0 };
   for (let index = 0; index < config.energyTarget; index += 1) room.energy.push(createEnergy(room));
   rooms.set(room.id, room);
   return room;
 }
 
-function findRoom(game) {
+function findRoom(game, requestedCode = '') {
+  if (requestedCode) return [...rooms.values()].find((room) => room.game === game && room.code === requestedCode) || null;
   return [...rooms.values()].find((room) => room.game === game && humanCount(room) < room.config.maxPlayers) || createRoom(game);
 }
 
@@ -135,7 +153,7 @@ function removeOneBot(room) {
   const bot = [...room.players.values()].find((player) => player.bot);
   if (bot) room.players.delete(bot.id);
 }
-function roomSummary(room) { return { id: room.id, game: room.game, players: room.players.size, humans: humanCount(room), capacity: room.config.maxPlayers }; }
+function roomSummary(room) { return { id: room.id, code: room.code || null, game: room.game, players: room.players.size, humans: humanCount(room), capacity: room.config.maxPlayers }; }
 function send(socket, message) { if (socket && socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message)); }
 function broadcast(room, message) { room.players.forEach((player) => send(player.socket, message)); }
 
@@ -155,13 +173,16 @@ websocketServer.on('connection', (socket) => {
     try { message = JSON.parse(raw.toString()); } catch { return; }
     if (message.type === 'join' && !player) {
       const game = gameFrom(message.game);
-      const room = findRoom(game);
+      const requestedCode = roomCode(message.roomCode);
+      const room = findRoom(game, requestedCode);
+      if (!room) return send(socket, { type: 'error', code: 'room_not_found', message: 'Stanza non trovata: verifica il codice.' });
+      if (humanCount(room) >= room.config.maxPlayers) return send(socket, { type: 'error', code: 'room_full', message: 'La stanza è piena.' });
       removeOneBot(room);
       player = createPlayer(socket, message, room);
       player.room = room;
       room.players.set(player.id, player);
       ensureBots(room);
-      send(socket, { type: 'joined', id: player.id, roomId: room.id, game, world: room.config.world, capacity: room.config.maxPlayers });
+      send(socket, { type: 'joined', id: player.id, roomId: room.id, roomCode: room.code || null, game, world: room.config.world, capacity: room.config.maxPlayers });
       broadcast(room, { type: 'notice', message: `${player.nickname} è entrato in ${room.id}.` });
       return;
     }
@@ -284,7 +305,7 @@ function snapshot(room) {
     level: player.level, score: Math.floor(player.score), length: player.length, jumping: player.input.jumping, respawning: Boolean(player.respawnAt),
   }));
   const leaderboard = [...players].sort((first, second) => second.score - first.score).slice(0, 5).map(({ nickname, score, bot }) => ({ nickname, score, bot }));
-  return { type: 'state', game: room.game, roomId: room.id, world: room.config.world, capacity: room.config.maxPlayers, humans: humanCount(room), bots: room.players.size - humanCount(room), players, bullets: room.bullets.map(({ id: bulletId, owner, x, y }) => ({ id: bulletId, owner, x, y })), energy: room.energy, leaderboard };
+  return { type: 'state', game: room.game, roomId: room.id, roomCode: room.code || null, world: room.config.world, capacity: room.config.maxPlayers, humans: humanCount(room), bots: room.players.size - humanCount(room), players, bullets: room.bullets.map(({ id: bulletId, owner, x, y }) => ({ id: bulletId, owner, x, y })), energy: room.energy, leaderboard };
 }
 
 let previousTick = Date.now();

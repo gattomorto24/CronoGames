@@ -7,11 +7,14 @@ var skin := "mint"
 var player_id := ""
 var send_timer := 0.0
 var server_url := ""
+var room_code := ""
+var join_sent := false
 
 func start_session(game_ref: Node, nickname_value: String, skin_value: String) -> void:
 	game = game_ref
 	nickname = nickname_value if not nickname_value.is_empty() else "Pilota"
 	skin = skin_value
+	room_code = room_code_from_url()
 	server_url = resolve_server_url()
 	if server_url.is_empty():
 		game.announce("Arena locale · aggiungi ?ws=wss://tuo-server per il multiplayer pubblico")
@@ -27,6 +30,10 @@ func _exit_tree() -> void:
 func _process(delta: float) -> void:
 	socket.poll()
 	if socket.get_ready_state() != WebSocketPeer.STATE_OPEN:
+		return
+	if not join_sent:
+		join_sent = true
+		socket.send_text(JSON.stringify({"type": "join", "game": "slither", "nickname": nickname, "skin": skin, "roomCode": room_code}))
 		return
 	while socket.get_available_packet_count() > 0:
 		consume(socket.get_packet().get_string_from_utf8())
@@ -44,9 +51,11 @@ func consume(raw: String) -> void:
 	match str(message.get("type", "")):
 		"joined":
 			player_id = str(message.get("id", ""))
-			game.announce("ONLINE · Stanza %s · bot attivi" % str(message.get("roomId", "")))
+			var code = str(message.get("roomCode", ""))
+			game.announce("ONLINE · %s · bot attivi" % ("Codice " + code if not code.is_empty() else "Stanza " + str(message.get("roomId", ""))))
 		"state": game.apply_online_state(message, player_id)
 		"notice": game.announce(str(message.get("message", "")))
+		"error": game.announce(str(message.get("message", "Errore di connessione.")))
 
 func current_keys() -> Array[String]:
 	var keys: Array[String] = []
@@ -67,3 +76,8 @@ func resolve_server_url() -> String:
 			var port = str(JavaScriptBridge.eval("window.location.port || '3001'", true))
 			return "%s//%s:%s" % [protocol, host, port]
 	return OS.get_environment("CRONOGAMES_WS_URL")
+
+func room_code_from_url() -> String:
+	if OS.has_feature("web"):
+		return str(JavaScriptBridge.eval("new URLSearchParams(window.location.search).get('room') || ''", true)).to_upper().replace(" ", "")
+	return ""

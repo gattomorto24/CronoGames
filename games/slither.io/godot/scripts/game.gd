@@ -3,6 +3,7 @@ extends Node2D
 const SnakeScene := preload("res://scripts/snake.gd")
 const FoodScene := preload("res://scripts/food.gd")
 const OnlineSessionScene := preload("res://scripts/online_session.gd")
+const TouchStickScene := preload("res://scripts/touch_stick.gd")
 const WORLD_SIZE := Vector2(5200.0, 4000.0)
 const SNAKE_COLORS := [Color("78f4ad"), Color("ff7faf"), Color("69b9ff"), Color("ffc963"), Color("c27cff"), Color("ff9666")]
 const FOOD_COLORS := [Color("ffe56f"), Color("ff91cc"), Color("70eaff"), Color("9aff82"), Color("b688ff")]
@@ -231,6 +232,7 @@ func build_hud() -> void:
 	stats.offset_bottom = 117
 	stats.add_theme_stylebox_override("panel", panel_style(Color(0.025, 0.09, 0.1, 0.88), Color("326d65"), 13, 1))
 	hud_layer.add_child(stats)
+	stats.visible = not mobile_mode
 	var labels := VBoxContainer.new()
 	labels.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 13)
 	labels.add_theme_constant_override("separation", 6)
@@ -247,6 +249,7 @@ func build_hud() -> void:
 	board.offset_bottom = 160
 	board.add_theme_stylebox_override("panel", panel_style(Color(0.025, 0.09, 0.1, 0.88), Color("326d65"), 13, 1))
 	hud_layer.add_child(board)
+	board.visible = not mobile_mode
 	leaderboard_label = make_label("CLASSIFICA", 12, Color("e8fff2"))
 	leaderboard_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 13)
 	board.add_child(leaderboard_label)
@@ -259,6 +262,7 @@ func build_hud() -> void:
 	announce_label.offset_bottom = -32
 	announce_label.add_theme_stylebox_override("normal", panel_style(Color(0.03, 0.09, 0.1, 0.84), Color("386a63"), 9, 1))
 	hud_layer.add_child(announce_label)
+	announce_label.visible = not mobile_mode
 
 func update_hud() -> void:
 	if player == null or length_label == null:
@@ -329,11 +333,16 @@ func build_touch_controls() -> void:
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(root)
-	add_touch_button(root, "←", "cg_slither_left", Vector2(24, -90), Vector2(58, 58))
-	add_touch_button(root, "↑", "cg_slither_up", Vector2(88, -154), Vector2(58, 58))
-	add_touch_button(root, "→", "cg_slither_right", Vector2(152, -90), Vector2(58, 58))
-	add_touch_button(root, "↓", "cg_slither_down", Vector2(88, -90), Vector2(58, 58))
+	add_touch_stick(root, ["cg_slither_left", "cg_slither_right", "cg_slither_up", "cg_slither_down"])
 	add_touch_button(root, "BOOST", "cg_slither_boost", Vector2(-116, -94), Vector2(92, 58), Control.PRESET_BOTTOM_RIGHT)
+
+func add_touch_stick(root: Control, actions: Array[String]) -> void:
+	var stick = TouchStickScene.new()
+	stick.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	stick.position = Vector2(18, -198)
+	stick.size = Vector2(178, 178)
+	root.add_child(stick)
+	stick.setup(actions[0], actions[1], actions[2], actions[3])
 
 func add_touch_button(root: Control, text_value: String, action: String, position_value: Vector2, size_value: Vector2, preset := Control.PRESET_BOTTOM_LEFT) -> void:
 	if not InputMap.has_action(action):

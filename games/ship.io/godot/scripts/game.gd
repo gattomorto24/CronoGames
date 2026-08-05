@@ -6,6 +6,7 @@ const EnergyOrbScene := preload("res://scripts/energy_orb.gd")
 const ProjectileScene := preload("res://scripts/projectile.gd")
 const RemoteShipScene := preload("res://scripts/remote_ship.gd")
 const OnlineSessionScene := preload("res://scripts/online_session.gd")
+const TouchStickScene := preload("res://scripts/touch_stick.gd")
 
 const WORLD_SIZE := Vector2(4800.0, 3600.0)
 const ENEMY_COLORS := [Color("ff6687"), Color("ff9f68"), Color("d76aff"), Color("5ab6ff")]
@@ -270,6 +271,7 @@ func build_hud() -> void:
 	stats_panel.offset_bottom = 148
 	stats_panel.add_theme_stylebox_override("panel", panel_style(Color(0.045, 0.05, 0.11, 0.88), Color("403d64"), 13, 1))
 	hud_layer.add_child(stats_panel)
+	stats_panel.visible = not mobile_mode
 	var stats := VBoxContainer.new()
 	stats.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 13)
 	stats.add_theme_constant_override("separation", 6)
@@ -290,6 +292,7 @@ func build_hud() -> void:
 	leaderboard_panel.offset_bottom = 160
 	leaderboard_panel.add_theme_stylebox_override("panel", panel_style(Color(0.045, 0.05, 0.11, 0.88), Color("403d64"), 13, 1))
 	hud_layer.add_child(leaderboard_panel)
+	leaderboard_panel.visible = not mobile_mode
 	leaderboard_label = make_label("CLASSIFICA\n\n1.  PILOTA        0", 12, Color("ece9f7"))
 	leaderboard_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 13)
 	leaderboard_panel.add_child(leaderboard_label)
@@ -302,6 +305,7 @@ func build_hud() -> void:
 	announcement_label.offset_bottom = -36
 	announcement_label.add_theme_stylebox_override("normal", panel_style(Color(0.06, 0.06, 0.14, 0.86), Color("585279"), 9, 1))
 	hud_layer.add_child(announcement_label)
+	announcement_label.visible = not mobile_mode
 	var controls := make_label("WASD / FRECCE · MOUSE PER MIRA E FUOCO · TOUCH SU MOBILE", 10, Color("aaa7c0"))
 	controls.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	controls.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
@@ -384,11 +388,16 @@ func build_touch_controls() -> void:
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(root)
-	add_touch_button(root, "←", "cg_ship_left", Vector2(24, -90), Vector2(58, 58))
-	add_touch_button(root, "↑", "cg_ship_up", Vector2(88, -154), Vector2(58, 58))
-	add_touch_button(root, "→", "cg_ship_right", Vector2(152, -90), Vector2(58, 58))
-	add_touch_button(root, "↓", "cg_ship_down", Vector2(88, -90), Vector2(58, 58))
+	add_touch_stick(root, ["cg_ship_left", "cg_ship_right", "cg_ship_up", "cg_ship_down"])
 	add_touch_button(root, "FUOCO", "cg_ship_fire", Vector2(-116, -94), Vector2(92, 58), Control.PRESET_BOTTOM_RIGHT)
+
+func add_touch_stick(root: Control, actions: Array[String]) -> void:
+	var stick = TouchStickScene.new()
+	stick.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	stick.position = Vector2(18, -198)
+	stick.size = Vector2(178, 178)
+	root.add_child(stick)
+	stick.setup(actions[0], actions[1], actions[2], actions[3])
 
 func add_touch_button(root: Control, text_value: String, action: String, position_value: Vector2, size_value: Vector2, preset := Control.PRESET_BOTTOM_LEFT) -> void:
 	if not InputMap.has_action(action):

@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+const TouchStickScene := preload("res://scripts/touch_stick.gd")
+
 var pressed_actions: Dictionary = {}
 
 func _ready() -> void:
@@ -9,12 +11,17 @@ func _ready() -> void:
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
-	add_button(root, "←", "left", Vector2(26, -92), Vector2(62, 62))
-	add_button(root, "↑", "forward", Vector2(94, -160), Vector2(62, 62))
-	add_button(root, "→", "right", Vector2(162, -92), Vector2(62, 62))
-	add_button(root, "↓", "backward", Vector2(94, -92), Vector2(62, 62))
+	add_stick(root)
 	add_button(root, "SALTA", "go_up", Vector2(-116, -108), Vector2(92, 54), Control.PRESET_BOTTOM_RIGHT)
 	add_button(root, "CORRI", "move_fast", Vector2(-116, -48), Vector2(92, 42), Control.PRESET_BOTTOM_RIGHT)
+
+func add_stick(root: Control) -> void:
+	var stick = TouchStickScene.new()
+	stick.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	stick.position = Vector2(18, -198)
+	stick.size = Vector2(178, 178)
+	root.add_child(stick)
+	stick.setup("left", "right", "forward", "backward")
 
 func add_button(root: Control, label: String, action: String, offset: Vector2, size: Vector2, preset := Control.PRESET_BOTTOM_LEFT) -> void:
 	var button := Button.new()
