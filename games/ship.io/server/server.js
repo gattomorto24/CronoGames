@@ -1,10 +1,12 @@
 const http = require('http');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { WebSocketServer, WebSocket } = require('ws');
 const auth = require('./auth');
 
 const PORT = Number(process.env.PORT || 3001);
+const HOST = process.env.HOST || '0.0.0.0';
 const TICK_RATE = 30;
 const SNAPSHOT_EVERY_TICKS = 2;
 const PROJECT_ROOT = path.resolve(__dirname, '../../..');
@@ -298,4 +300,18 @@ setInterval(() => {
   });
 }, 1000 / TICK_RATE);
 
-server.listen(PORT, () => console.log(`CronoGames multiplayer server pronto su ws://localhost:${PORT}`));
+function localNetworkUrls() {
+  const addresses = new Set();
+  for (const network of Object.values(os.networkInterfaces())) {
+    for (const address of network || []) {
+      if (address.family === 'IPv4' && !address.internal) addresses.add(`http://${address.address}:${PORT}/web/index.html`);
+    }
+  }
+  return [...addresses];
+}
+
+server.listen(PORT, HOST, () => {
+  console.log(`CronoGames multiplayer server pronto su http://localhost:${PORT}`);
+  console.log('Per giocare con amici sulla stessa Wi-Fi, condividi uno di questi indirizzi:');
+  for (const url of localNetworkUrls()) console.log(`  ${url}`);
+});

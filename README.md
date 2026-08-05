@@ -31,6 +31,10 @@ Il WebSocket locale gestisce stanze separate per `ship`, `slither` e `parkour`: 
 
 Per un deploy pubblico, GitHub Pages ospita soltanto i file WebGL: è necessario pubblicare anche questo server su un host Node.js con HTTPS/WSS. I client possono puntare al server pubblico aggiungendo `?ws=wss://tuo-dominio.example` all'URL del gioco.
 
+## Partita locale con amici (LAN)
+
+Fai doppio clic su `games/ship.io/server/start-local-server.command` sul Mac che ospita la partita. Il Terminale mostra un link `http://192.168.x.x:3001/web/index.html`: invialo agli amici collegati alla stessa Wi‑Fi. Il portale e tutti e tre i giochi riconoscono automaticamente l'indirizzo LAN e si connettono al WebSocket del Mac ospitante. I dettagli e le cautele di rete sono in `games/ship.io/server/LOCAL_SERVER.md`.
+
 ## Account locale
 
 L'account viene creato tramite `POST /api/auth/register`, con password hash `scrypt`, sessione in cookie `HttpOnly` e profilo tramite `GET /api/auth/me`. I dati locali sono creati al primo account in `games/ship.io/server/data/accounts.json` e sono esclusi dal versionamento.

@@ -21,12 +21,23 @@ var leaderboard_label: Label
 var announce_label: Label
 var rng := RandomNumberGenerator.new()
 var food_timer := 0.0
+var mobile_mode := false
+var local_bot_target := 9
+var initial_food_count := 180
+var food_target := 230
+var background_mote_count := 180
 var online_session: Node
 var online_snakes: Dictionary = {}
 var online_leaderboard: Array = []
 
 func _ready() -> void:
 	rng.randomize()
+	mobile_mode = is_touch_layout()
+	if mobile_mode:
+		local_bot_target = 5
+		initial_food_count = 96
+		food_target = 132
+		background_mote_count = 86
 	queue_redraw()
 	build_menu()
 
@@ -45,7 +56,7 @@ func _process(delta: float) -> void:
 			collect_food(snake)
 	check_collisions()
 	food_timer += delta
-	if food_timer >= 0.38 and foods.size() < 230:
+	if food_timer >= 0.38 and foods.size() < food_target:
 		food_timer = 0.0
 		spawn_food(random_world_position(), rng.randi_range(1, 2))
 	update_hud()
@@ -138,9 +149,9 @@ func start_game() -> void:
 	camera.limit_right = int(WORLD_SIZE.x)
 	camera.limit_bottom = int(WORLD_SIZE.y)
 	player.add_child(camera)
-	for index in 9:
+	for index in local_bot_target:
 		spawn_bot(index)
-	for index in 180:
+	for index in initial_food_count:
 		spawn_food(random_world_position(), rng.randi_range(1, 3))
 	build_hud()
 	build_touch_controls()
@@ -205,7 +216,7 @@ func destroy_snake(snake: SlitherSnake) -> void:
 	else:
 		snake.queue_free()
 		await get_tree().create_timer(1.2).timeout
-		if game_active:
+		if game_active and snakes.filter(func(candidate: SlitherSnake) -> bool: return is_instance_valid(candidate) and not candidate.network_controlled).size() < local_bot_target + 1:
 			spawn_bot(rng.randi_range(0, 99))
 
 func build_hud() -> void:
@@ -268,10 +279,17 @@ func apply_online_state(state: Dictionary, local_id: String) -> void:
 		return
 	online_leaderboard = state.get("leaderboard", [])
 	var active := {}
-	for actor in state.get("players", []):
+	var rendered := 0
+	var remote_limit := 8 if mobile_mode else 20
+	var actors: Array = state.get("players", []).duplicate()
+	actors.sort_custom(func(first: Dictionary, second: Dictionary) -> bool: return not bool(first.get("bot", false)) and bool(second.get("bot", false)))
+	for actor in actors:
 		var actor_id := str(actor.get("id", ""))
 		if actor_id.is_empty() or actor_id == local_id:
 			continue
+		if rendered >= remote_limit:
+			continue
+		rendered += 1
 		active[actor_id] = true
 		var snake: SlitherSnake = online_snakes.get(actor_id)
 		if snake == null:
@@ -369,7 +387,7 @@ func _draw() -> void:
 		draw_line(Vector2(x, 0), Vector2(x, WORLD_SIZE.y), Color(0.18, 0.56, 0.5, 0.11), 1.0)
 	for y in range(0, int(WORLD_SIZE.y) + 1, 120):
 		draw_line(Vector2(0, y), Vector2(WORLD_SIZE.x, y), Color(0.18, 0.56, 0.5, 0.11), 1.0)
-	for index in 180:
+	for index in background_mote_count:
 		var mote := Vector2(float((index * 239) % int(WORLD_SIZE.x)), float((index * 151) % int(WORLD_SIZE.y)))
 		draw_circle(mote, 1.0 + float(index % 3) * 0.45, Color(0.55, 1.0, 0.83, 0.13 + float(index % 3) * 0.05))
 	draw_rect(Rect2(Vector2(30, 30), WORLD_SIZE - Vector2(60, 60)), Color("3b997b"), false, 3.0)

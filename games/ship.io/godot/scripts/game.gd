@@ -27,12 +27,23 @@ var announcement_label: Label
 var rng := RandomNumberGenerator.new()
 var elapsed := 0.0
 var spawn_timer := 0.0
+var mobile_mode := false
+var local_enemy_target := 12
+var local_orb_target := 100
+var initial_orb_count := 90
+var background_star_count := 170
 var online_session: Node
 var remote_ships: Dictionary = {}
 var online_leaderboard: Array = []
 
 func _ready() -> void:
 	rng.randomize()
+	mobile_mode = is_touch_layout()
+	if mobile_mode:
+		local_enemy_target = 6
+		local_orb_target = 58
+		initial_orb_count = 48
+		background_star_count = 82
 	queue_redraw()
 	build_menu()
 
@@ -41,7 +52,7 @@ func _process(delta: float) -> void:
 		return
 	elapsed += delta
 	spawn_timer += delta
-	if spawn_timer > 1.4 and orbs.size() < 100:
+	if spawn_timer > 1.4 and orbs.size() < local_orb_target:
 		spawn_timer = 0.0
 		spawn_orb(random_world_position())
 	for orb in orbs.duplicate():
@@ -181,9 +192,9 @@ func start_game() -> void:
 	camera.limit_right = int(WORLD_SIZE.x)
 	camera.limit_bottom = int(WORLD_SIZE.y)
 	player.add_child(camera)
-	for index in 12:
+	for index in local_enemy_target:
 		spawn_enemy(index)
-	for index in 90:
+	for index in initial_orb_count:
 		spawn_orb(random_world_position())
 	build_hud()
 	build_touch_controls()
@@ -233,7 +244,7 @@ func enemy_destroyed(enemy: EnemyShip) -> void:
 	player.collect_orb(36)
 	announce("Nave rivale eliminata  +%d" % enemy.score_value)
 	await get_tree().create_timer(1.1).timeout
-	if game_active:
+	if game_active and enemies.size() < local_enemy_target:
 		spawn_enemy(rng.randi_range(0, 99))
 
 func announce_upgrade(new_level: int) -> void:
@@ -322,10 +333,17 @@ func apply_online_state(state: Dictionary, local_id: String) -> void:
 		return
 	online_leaderboard = state.get("leaderboard", [])
 	var active := {}
-	for actor in state.get("players", []):
+	var rendered := 0
+	var remote_limit := 8 if mobile_mode else 20
+	var actors: Array = state.get("players", []).duplicate()
+	actors.sort_custom(func(first: Dictionary, second: Dictionary) -> bool: return not bool(first.get("bot", false)) and bool(second.get("bot", false)))
+	for actor in actors:
 		var actor_id := str(actor.get("id", ""))
 		if actor_id.is_empty() or actor_id == local_id:
 			continue
+		if rendered >= remote_limit:
+			continue
+		rendered += 1
 		active[actor_id] = true
 		var remote: Node2D = remote_ships.get(actor_id)
 		if remote == null:
@@ -425,7 +443,7 @@ func _draw() -> void:
 		draw_line(Vector2(x, 0), Vector2(x, WORLD_SIZE.y), Color(0.27, 0.24, 0.55, 0.13), 1.0)
 	for y in range(0, int(WORLD_SIZE.y) + 1, 120):
 		draw_line(Vector2(0, y), Vector2(WORLD_SIZE.x, y), Color(0.27, 0.24, 0.55, 0.13), 1.0)
-	for index in 170:
+	for index in background_star_count:
 		var star_position := Vector2(float((index * 197) % int(WORLD_SIZE.x)), float((index * 313) % int(WORLD_SIZE.y)))
 		var size := 1.0 + float(index % 3) * 0.6
 		draw_circle(star_position, size, Color(0.72, 0.73, 1.0, 0.25 + float(index % 4) * 0.1))

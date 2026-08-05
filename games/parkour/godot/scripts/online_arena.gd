@@ -68,10 +68,17 @@ func apply_state(state: Dictionary) -> void:
 		return
 	set_status("ONLINE · %s giocatori · %s bot · %s" % [str(state.get("humans", 0)), str(state.get("bots", 0)), room_id])
 	var active := {}
-	for actor in state.get("players", []):
+	var rendered := 0
+	var remote_limit := 8 if is_touch_device() else 20
+	var actors: Array = state.get("players", []).duplicate()
+	actors.sort_custom(func(first: Dictionary, second: Dictionary) -> bool: return not bool(first.get("bot", false)) and bool(second.get("bot", false)))
+	for actor in actors:
 		var actor_id := str(actor.get("id", ""))
 		if actor_id == player_id or actor_id.is_empty():
 			continue
+		if rendered >= remote_limit:
+			continue
+		rendered += 1
 		active[actor_id] = true
 		var avatar: Node3D = remote_avatars.get(actor_id)
 		if avatar == null:
@@ -133,8 +140,16 @@ func resolve_server_url() -> String:
 		if not configured.is_empty() and configured != "null":
 			return configured
 		var hostname = str(JavaScriptBridge.eval("window.location.hostname", true))
-		if hostname == "localhost" or hostname == "127.0.0.1":
+		var is_lan_host = bool(JavaScriptBridge.eval("(() => { const h = location.hostname; return h === 'localhost' || /^127\\./.test(h) || /^10\\./.test(h) || /^192\\.168\\./.test(h) || /^172\\.(1[6-9]|2[0-9]|3[0-1])\\./.test(h) || h.endsWith('.local'); })()", true))
+		if is_lan_host:
 			var protocol = str(JavaScriptBridge.eval("window.location.protocol === 'https:' ? 'wss:' : 'ws:'", true))
 			var port = str(JavaScriptBridge.eval("window.location.port || '3001'", true))
 			return "%s//%s:%s" % [protocol, hostname, port]
 	return OS.get_environment("CRONOGAMES_WS_URL")
+
+func is_touch_device() -> bool:
+	if OS.has_feature("mobile"):
+		return true
+	if OS.has_feature("web"):
+		return bool(JavaScriptBridge.eval("window.matchMedia && window.matchMedia('(pointer: coarse)').matches", true))
+	return false

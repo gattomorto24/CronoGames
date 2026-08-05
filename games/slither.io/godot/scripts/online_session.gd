@@ -61,7 +61,8 @@ func resolve_server_url() -> String:
 		var configured = str(JavaScriptBridge.eval("new URLSearchParams(window.location.search).get('ws') || ''", true))
 		if not configured.is_empty() and configured != "null": return configured
 		var host = str(JavaScriptBridge.eval("window.location.hostname", true))
-		if host == "localhost" or host == "127.0.0.1":
+		var is_lan_host = bool(JavaScriptBridge.eval("(() => { const h = location.hostname; return h === 'localhost' || /^127\\./.test(h) || /^10\\./.test(h) || /^192\\.168\\./.test(h) || /^172\\.(1[6-9]|2[0-9]|3[0-1])\\./.test(h) || h.endsWith('.local'); })()", true))
+		if is_lan_host:
 			var protocol = str(JavaScriptBridge.eval("window.location.protocol === 'https:' ? 'wss:' : 'ws:'", true))
 			var port = str(JavaScriptBridge.eval("window.location.port || '3001'", true))
 			return "%s//%s:%s" % [protocol, host, port]
