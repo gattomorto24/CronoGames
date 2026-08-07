@@ -32,7 +32,7 @@ const gameDetails = {
   parkour: { title: 'Crono Parkour', url: '/games/parkour/client/index.html' },
   anonymous_runner: { title: 'Anonymous Runner', url: '/games/anonymous-runner/client/index.html' },
 };
-const arcadeGames = [
+const godotGames = [
   ['neon_dodge', 'Neon Dodge', 'Arcade · Dodge', '✦', '#6effd6'],
   ['meteor_dash', 'Meteor Dash', 'Racing · Dodge', '☄', '#ffbd55'],
   ['orbital_hoops', 'Orbital Hoops', 'Arcade · Collect', '◎', '#70e7ff'],
@@ -55,14 +55,16 @@ const arcadeGames = [
   ['drone_arena', 'Drone Arena', 'Action · Arena', '⬡', '#ffed72'],
 ];
 
-function installArcadeLibrary() {
-  arcadeGames.forEach(([id, title, genre, icon, color]) => {
-    gameDetails[id] = { title, url: `/games/arcade-hub/client/index.html?game=${encodeURIComponent(id)}` };
+function installGodotLibrary() {
+  godotGames.forEach(([id, title, genre, icon, color]) => {
+    // Every entry is its own Godot project and exports its own PCK package.
+    // The WebGL runtime is intentionally shared once under games/godot-web-runtime.
+    gameDetails[id] = { title, url: `/games/${id.replaceAll('_', '-')}/client/index.html` };
     gamesGrid.insertAdjacentHTML('beforeend', `
-      <article class="game-card game-card--arcade" data-game="${title.toLowerCase()} ${genre.toLowerCase()} arcade online mobile" style="--arcade-accent: ${color}">
+      <article class="game-card game-card--godot" data-game="${title.toLowerCase()} ${genre.toLowerCase()} godot webgl mobile" style="--arcade-accent: ${color}">
         <div class="game-visual arcade-visual" aria-hidden="true"><span>${icon}</span><i></i><b></b></div>
         <div class="game-card-body">
-          <div><span class="tag live">● ONLINE</span><h3>${title}</h3><p>${genre}</p></div>
+          <div><span class="tag">GODOT WEBGL</span><h3>${title}</h3><p>${genre}</p></div>
           <button class="round-play launch-game" type="button" data-game-id="${id}" aria-label="Gioca a ${title}">▶</button>
         </div>
       </article>`);
@@ -70,14 +72,14 @@ function installArcadeLibrary() {
   ['#host-game', '#join-game'].forEach((selector) => {
     const select = document.querySelector(selector);
     const group = document.createElement('optgroup');
-    group.label = 'Crono Arcade — 20 mini-giochi';
-    arcadeGames.forEach(([id, title]) => group.append(new Option(title, id)));
+    group.label = 'Godot Arcade — 20 giochi indipendenti';
+    godotGames.forEach(([id, title]) => group.append(new Option(title, id)));
     select.append(group);
   });
   gameLaunchers = document.querySelectorAll('.launch-game');
   cards = [...document.querySelectorAll('[data-game]')];
 }
-installArcadeLibrary();
+installGodotLibrary();
 let lastFocusedElement;
 let toastTimer;
 let authMode = 'login';
