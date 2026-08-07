@@ -3,3 +3,8 @@
 games/**/.godot/
 games/**/server/node_modules/
 games/**/server/data/accounts.json
+# Godot C++ build products are regenerated from the checked-in source.
+games/parkour/godot-dynamic/**/*.o
+games/parkour/godot-dynamic/**/*.os
+games/parkour/godot-dynamic/.sconsign.dblite
+games/parkour/godot-dynamic/bin/

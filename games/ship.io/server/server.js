@@ -15,10 +15,24 @@ let roomSequence = 1;
 let entitySequence = 1;
 
 // The server owns the room population and the simulation. Clients only send intent.
+const ARCADE_GAMES = [
+  ['neon_dodge', 'Neon Dodge'], ['meteor_dash', 'Meteor Dash'], ['orbital_hoops', 'Orbital Hoops'], ['pixel_raiders', 'Pixel Raiders'],
+  ['maze_rush', 'Maze Rush'], ['drift_nova', 'Drift Nova'], ['turbo_towers', 'Turbo Towers'], ['echo_jump', 'Echo Jump'],
+  ['bubble_blitz', 'Bubble Blitz'], ['circuit_sprint', 'Circuit Sprint'], ['crystal_catch', 'Crystal Catch'], ['lava_hop', 'Lava Hop'],
+  ['star_slinger', 'Star Slinger'], ['shadow_chase', 'Shadow Chase'], ['skyline_run', 'Skyline Run'], ['void_survivor', 'Void Survivor'],
+  ['rocket_rally', 'Rocket Rally'], ['prism_puzzle', 'Prism Puzzle'], ['cosmo_pong', 'Cosmo Pong'], ['drone_arena', 'Drone Arena'],
+];
+const ARCADE_CONFIG = Object.fromEntries(ARCADE_GAMES.map(([id, label], index) => [id, {
+  label, world: 1000, maxPlayers: 12, energyTarget: 24, speed: 230,
+  botNames: [`BOT-${index + 1}`, 'NOVA', 'PULSE', 'BYTE', 'ECHO', 'VOLT', 'LUMA', 'ZIG'], arcade: true,
+}]));
+
 const GAME_CONFIG = {
   ship: { label: 'Ship.io', world: 2600, maxPlayers: 20, energyTarget: 80, speed: 185, botNames: ['NOVA', 'PULSE', 'ORBIT', 'BYTE', 'KRAKEN', 'LUMA', 'ZERO', 'VOLT'] },
   slither: { label: 'Slither.io', world: 5200, maxPlayers: 20, energyTarget: 160, speed: 170, botNames: ['MINT', 'COBRA', 'VIRUS', 'ECHO', 'GLOW', 'PIXEL', 'LUX', 'NOVA'] },
   parkour: { label: 'Crono Parkour', world: 120, maxPlayers: 20, energyTarget: 0, speed: 8.5, botNames: ['RUNNER', 'DASH', 'FLUX', 'HOP', 'RUSH', 'VEX', 'ZIG', 'RIFT'] },
+  anonymous_runner: { label: 'Anonymous Runner', world: 120, maxPlayers: 20, energyTarget: 0, speed: 8.5, botNames: ['GHOST', 'NULL', 'CIPHER', 'SHADE', 'NOVA', 'VEX', 'RIFT', 'ECHO'] },
+  ...ARCADE_CONFIG,
 };
 
 const server = http.createServer(async (request, response) => {
@@ -122,14 +136,16 @@ function findRoom(game, requestedCode = '') {
   return [...rooms.values()].find((room) => room.game === game && humanCount(room) < room.config.maxPlayers) || createRoom(game);
 }
 
+function isRunnerGame(game) { return game === 'parkour' || game === 'anonymous_runner'; }
+function isArcadeGame(game) { return Boolean(GAME_CONFIG[game]?.arcade); }
 function createEnergy(room) {
-  const edge = room.game === 'parkour' ? 8 : 65;
+  const edge = isRunnerGame(room.game) ? 8 : 65;
   return { id: id('orb'), x: random(edge, room.config.world - edge), y: random(edge, room.config.world - edge) };
 }
 
 function createPlayer(socket, payload, room, bot = false) {
   const config = room.config;
-  const margin = room.game === 'parkour' ? 8 : 150;
+  const margin = isRunnerGame(room.game) ? 8 : 150;
   const botIndex = room.players.size % config.botNames.length;
   return {
     id: id(bot ? 'bot' : 'pilot'), socket: bot ? null : socket, bot,
@@ -203,10 +219,10 @@ function botInput(room, player, now) {
   if (now >= player.botTurnAt) {
     player.botTurnAt = now + random(700, 2100);
     player.input.angle = random(-Math.PI, Math.PI);
-    const styles = room.game === 'parkour' ? [['w'], ['d'], ['w', 'd'], ['a']] : [['w'], ['a'], ['s'], ['d'], ['w', 'd'], ['w', 'a']];
+    const styles = isRunnerGame(room.game) ? [['w'], ['d'], ['w', 'd'], ['a']] : [['w'], ['a'], ['s'], ['d'], ['w', 'd'], ['w', 'a']];
     player.input.keys = styles[Math.floor(Math.random() * styles.length)];
-    player.input.shooting = room.game === 'ship' && Math.random() > 0.42;
-    player.input.jumping = room.game === 'parkour' && Math.random() > 0.72;
+    player.input.shooting = room.game === 'ship' || (isArcadeGame(room.game) && Math.random() > 0.66);
+    player.input.jumping = (isRunnerGame(room.game) || isArcadeGame(room.game)) && Math.random() > 0.72;
   }
 }
 
@@ -233,6 +249,9 @@ function tickPlayer(room, player, now, delta) {
   } else if (room.game === 'slither') {
     collectEnergy(room, player);
     player.length = Math.max(20, player.length + (player.input.shooting ? -0.012 : 0));
+  } else if (isArcadeGame(room.game)) {
+    collectEnergy(room, player);
+    if (player.input.jumping || player.input.shooting) player.score += delta * 4;
   } else if (player.input.jumping) {
     player.score += delta * 4;
   }

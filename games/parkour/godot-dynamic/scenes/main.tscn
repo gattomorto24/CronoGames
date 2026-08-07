@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/mobile/mobile_runtime.gd" id="1_mobile"]
+
+[node name="CronoParkourBazaar" type="WorldDirector"]
+
+[node name="MobileRuntime" type="CanvasLayer" parent="."]
+script = ExtResource("1_mobile")

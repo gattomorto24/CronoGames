@@ -94,7 +94,7 @@
             <p class="eyebrow"><i></i> SCEGLI LA TUA SFIDA</p>
             <h2 id="games-title">Giochi in primo piano</h2>
           </div>
-          <button class="text-button" data-message="La libreria completa arriverà con i prossimi giochi.">Vedi tutti <span aria-hidden="true">→</span></button>
+          <button class="text-button" data-message="24 giochi disponibili: scegli una card e parti subito.">Vedi tutti <span aria-hidden="true">→</span></button>
         </div>
 
         <div class="games-grid" id="games-grid">
@@ -119,6 +119,14 @@
             <div class="game-card-body">
               <div><span class="tag live">● LIVE</span><h3>Crono Parkour</h3><p>Multiplayer · Parkour</p></div>
               <button class="round-play launch-game" type="button" data-game-id="parkour" aria-label="Gioca a Crono Parkour">▶</button>
+            </div>
+          </article>
+
+          <article class="game-card game-card--anonymous" data-game="anonymous runner corsa mobile pc parkour arcade">
+            <div class="game-visual anonymous-visual" aria-hidden="true"><span class="anonymous-grid"></span><span class="anonymous-runner">◈</span><span class="anonymous-beacon"></span></div>
+            <div class="game-card-body">
+              <div><span class="tag live">● LIVE</span><h3>Anonymous Runner</h3><p>Arcade · PC &amp; Mobile</p></div>
+              <button class="round-play launch-game" type="button" data-game-id="anonymous_runner" aria-label="Gioca ad Anonymous Runner">▶</button>
             </div>
           </article>
 
@@ -186,12 +194,12 @@
           <button type="button" data-host-mode="join" role="tab" aria-selected="false">Entra con codice</button>
         </div>
         <form id="host-create-form">
-          <label>GIOCO<select id="host-game"><option value="ship">Ship.io</option><option value="slither">Slither.io</option><option value="parkour">Crono Parkour</option></select></label>
+          <label>GIOCO<select id="host-game"><option value="ship">Ship.io</option><option value="slither">Slither.io</option><option value="parkour">Crono Parkour</option><option value="anonymous_runner">Anonymous Runner</option></select></label>
           <label>CODICE STANZA <span class="form-optional">OPZIONALE</span><input id="host-code" maxlength="8" placeholder="es. NOVA42" autocomplete="off" /></label>
           <button class="button auth-submit" type="submit">Apri server <span>→</span></button>
         </form>
         <form id="host-join-form" hidden>
-          <label>GIOCO<select id="join-game"><option value="ship">Ship.io</option><option value="slither">Slither.io</option><option value="parkour">Crono Parkour</option></select></label>
+          <label>GIOCO<select id="join-game"><option value="ship">Ship.io</option><option value="slither">Slither.io</option><option value="parkour">Crono Parkour</option><option value="anonymous_runner">Anonymous Runner</option></select></label>
           <label>CODICE AMICO<input id="join-code" minlength="5" maxlength="8" placeholder="es. NOVA42" autocomplete="off" required /></label>
           <button class="button auth-submit" type="submit">Entra nella stanza <span>→</span></button>
         </form>

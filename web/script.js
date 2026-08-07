@@ -1,9 +1,10 @@
 const modal = document.querySelector('#game-modal');
 const frame = document.querySelector('#game-frame');
-const gameLaunchers = document.querySelectorAll('.launch-game');
 const closeGameButtons = document.querySelectorAll('[data-close-game]');
 const searchInput = document.querySelector('#game-search');
-const cards = [...document.querySelectorAll('[data-game]')];
+const gamesGrid = document.querySelector('#games-grid');
+let gameLaunchers;
+let cards;
 const emptyResults = document.querySelector('#empty-results');
 const toast = document.querySelector('#toast');
 const authModal = document.querySelector('#auth-modal');
@@ -26,13 +27,57 @@ const inviteLink = document.querySelector('#invite-link');
 const gameDetails = {
   ship: { title: 'Ship.io', url: '/games/ship.io/client/index.html' },
   slither: { title: 'Slither.io', url: '/games/slither.io/client/index.html' },
-  parkour: {
-    title: 'Crono Parkour',
-    url: '/games/parkour/client/index.html',
-    mobileTitle: 'Crono Parkour Mobile',
-    mobileUrl: '/games/parkour-mobile/client/index.html',
-  },
+  // This is the exported project from ~/Documents/parkour/godot. Its own
+  // MobileRuntime changes controls and rendering quality on touch devices.
+  parkour: { title: 'Crono Parkour', url: '/games/parkour/client/index.html' },
+  anonymous_runner: { title: 'Anonymous Runner', url: '/games/anonymous-runner/client/index.html' },
 };
+const arcadeGames = [
+  ['neon_dodge', 'Neon Dodge', 'Arcade · Dodge', '✦', '#6effd6'],
+  ['meteor_dash', 'Meteor Dash', 'Racing · Dodge', '☄', '#ffbd55'],
+  ['orbital_hoops', 'Orbital Hoops', 'Arcade · Collect', '◎', '#70e7ff'],
+  ['pixel_raiders', 'Pixel Raiders', 'Action · Shooter', '▦', '#f4ff65'],
+  ['maze_rush', 'Maze Rush', 'Puzzle · Maze', '⌘', '#ab86ff'],
+  ['drift_nova', 'Drift Nova', 'Racing · Drift', '◒', '#ff75ce'],
+  ['turbo_towers', 'Turbo Towers', 'Platform · Jump', '▥', '#ffc764'],
+  ['echo_jump', 'Echo Jump', 'Platform · Bounce', '↟', '#71fff3'],
+  ['bubble_blitz', 'Bubble Blitz', 'Arcade · Pop', '○', '#78e4ff'],
+  ['circuit_sprint', 'Circuit Sprint', 'Racing · Sprint', '⌁', '#b0ff62'],
+  ['crystal_catch', 'Crystal Catch', 'Arcade · Catch', '◆', '#7df8ff'],
+  ['lava_hop', 'Lava Hop', 'Platform · Hop', '▲', '#ffad5f'],
+  ['star_slinger', 'Star Slinger', 'Action · Aim', '✷', '#ffe168'],
+  ['shadow_chase', 'Shadow Chase', 'Arcade · Escape', '◐', '#b88bff'],
+  ['skyline_run', 'Skyline Run', 'Runner · Arcade', '▰', '#6dffbb'],
+  ['void_survivor', 'Void Survivor', 'Survival · Arena', '✹', '#ff77f3'],
+  ['rocket_rally', 'Rocket Rally', 'Racing · Rally', '➤', '#ff9b55'],
+  ['prism_puzzle', 'Prism Puzzle', 'Puzzle · Memory', '◈', '#8fffe2'],
+  ['cosmo_pong', 'Cosmo Pong', 'Classic · Pong', '◯', '#77e7ff'],
+  ['drone_arena', 'Drone Arena', 'Action · Arena', '⬡', '#ffed72'],
+];
+
+function installArcadeLibrary() {
+  arcadeGames.forEach(([id, title, genre, icon, color]) => {
+    gameDetails[id] = { title, url: `/games/arcade-hub/client/index.html?game=${encodeURIComponent(id)}` };
+    gamesGrid.insertAdjacentHTML('beforeend', `
+      <article class="game-card game-card--arcade" data-game="${title.toLowerCase()} ${genre.toLowerCase()} arcade online mobile" style="--arcade-accent: ${color}">
+        <div class="game-visual arcade-visual" aria-hidden="true"><span>${icon}</span><i></i><b></b></div>
+        <div class="game-card-body">
+          <div><span class="tag live">● ONLINE</span><h3>${title}</h3><p>${genre}</p></div>
+          <button class="round-play launch-game" type="button" data-game-id="${id}" aria-label="Gioca a ${title}">▶</button>
+        </div>
+      </article>`);
+  });
+  ['#host-game', '#join-game'].forEach((selector) => {
+    const select = document.querySelector(selector);
+    const group = document.createElement('optgroup');
+    group.label = 'Crono Arcade — 20 mini-giochi';
+    arcadeGames.forEach(([id, title]) => group.append(new Option(title, id)));
+    select.append(group);
+  });
+  gameLaunchers = document.querySelectorAll('.launch-game');
+  cards = [...document.querySelectorAll('[data-game]')];
+}
+installArcadeLibrary();
 let lastFocusedElement;
 let toastTimer;
 let authMode = 'login';
@@ -77,7 +122,8 @@ function launchGame(gameId, roomCode = '', shouldAutoFullscreen = true) {
   modal.hidden = false;
   document.body.style.overflow = 'hidden';
   const room = roomCode.trim().toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 8);
-  frame.src = `${localBaseUrl()}${client.url}${room ? `?room=${encodeURIComponent(room)}` : ''}`;
+  const separator = client.url.includes('?') ? '&' : '?';
+  frame.src = `${localBaseUrl()}${client.url}${room ? `${separator}room=${encodeURIComponent(room)}` : ''}`;
   fullscreenGameButton.focus();
   if (shouldAutoFullscreen && isTouchDevice()) requestGameFullscreen();
 }

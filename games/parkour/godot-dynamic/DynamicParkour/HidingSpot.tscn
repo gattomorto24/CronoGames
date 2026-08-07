@@ -1,0 +1,48 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://DynamicParkour/HidingSpot.gd" id="1_hiding_spot"]
+
+[sub_resource type="BoxShape3D" id="HidingVolume"]
+size = Vector3(3, 1.8, 3)
+
+[sub_resource type="StandardMaterial3D" id="BushMaterial"]
+transparency = 1
+albedo_color = Color(0.11, 0.34, 0.13, 0.72)
+roughness = 1.0
+cull_mode = 2
+
+[sub_resource type="SphereMesh" id="BushCluster"]
+material = SubResource("BushMaterial")
+radius = 0.78
+height = 1.42
+radial_segments = 8
+rings = 4
+
+[node name="HidingSpot" type="Area3D" groups=["HidingSpot"]]
+collision_layer = 16
+collision_mask = 1
+monitoring = true
+monitorable = true
+script = ExtResource("1_hiding_spot")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.9, 0)
+shape = SubResource("HidingVolume")
+
+[node name="BushLeft" type="MeshInstance3D" parent="."]
+position = Vector3(-0.82, 0.58, 0.16)
+scale = Vector3(0.92, 0.82, 0.82)
+cast_shadow = 0
+mesh = SubResource("BushCluster")
+
+[node name="BushCenter" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.68, -0.12)
+scale = Vector3(1.1, 1, 1)
+cast_shadow = 0
+mesh = SubResource("BushCluster")
+
+[node name="BushRight" type="MeshInstance3D" parent="."]
+position = Vector3(0.84, 0.56, 0.22)
+scale = Vector3(0.88, 0.78, 0.8)
+cast_shadow = 0
+mesh = SubResource("BushCluster")

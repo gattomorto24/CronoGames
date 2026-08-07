@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://m4d0u4x4rby6"]
+
+[ext_resource type="Script" path="res://Locations/ProtoBeam.gd" id="1_wh7j3"]
+
+[node name="ProtoBeam" type="CSGBox3D"]
+script = ExtResource("1_wh7j3")
