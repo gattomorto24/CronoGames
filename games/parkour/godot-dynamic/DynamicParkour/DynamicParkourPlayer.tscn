@@ -1,0 +1,107 @@
+[gd_scene load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://DynamicParkour/DynamicParkourPlayer.gd" id="1_controller"]
+[ext_resource type="Script" path="res://DynamicParkour/DetectionController.gd" id="2_detection"]
+[ext_resource type="Script" path="res://DynamicParkour/AnimationController.gd" id="3_animation"]
+[ext_resource type="PackedScene" path="res://assets/dynamic_parkour/Erika.fbx" id="4_erika"]
+[ext_resource type="Script" path="res://DynamicParkour/AssassinationController.gd" id="5_assassination"]
+[ext_resource type="PackedScene" path="res://scenes/weapons/Sword.tscn" id="6_combat_sword"]
+[ext_resource type="Script" path="res://scripts/components/wellbeing/health_component.gd" id="7_health"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape_dynamic"]
+radius = 0.28
+height = 1.75
+
+[sub_resource type="StandardMaterial3D" id="MarkerMaterial"]
+transparency = 1
+albedo_color = Color(0.12, 0.72, 1, 0.28)
+shading_mode = 0
+
+[sub_resource type="SphereMesh" id="MarkerMesh"]
+material = SubResource("MarkerMaterial")
+radius = 0.08
+height = 0.16
+
+[sub_resource type="CapsuleShape3D" id="CombatHurtboxShape"]
+radius = 0.40
+height = 1.80
+
+[sub_resource type="SphereShape3D" id="AirAssassinationShape"]
+radius = 5.0
+
+[node name="DynamicParkourPlayer" type="CharacterBody3D"]
+collision_priority = 10.0
+safe_margin = 0.02
+floor_max_angle = 0.872665
+script = ExtResource("1_controller")
+
+[node name="DetectionController" type="Node" parent="."]
+script = ExtResource("2_detection")
+
+[node name="AnimationController" type="Node" parent="."]
+script = ExtResource("3_animation")
+
+[node name="AssassinationController" type="Node" parent="."]
+script = ExtResource("5_assassination")
+
+[node name="AirAssassinationDetector" type="Area3D" parent="."]
+position = Vector3(0, -4.5, 0)
+collision_layer = 0
+collision_mask = 8
+monitoring = true
+monitorable = false
+
+[node name="Shape" type="CollisionShape3D" parent="AirAssassinationDetector"]
+shape = SubResource("AirAssassinationShape")
+
+[node name="VisualPivot" type="Node3D" parent="."]
+rotation = Vector3(0, 3.14159, 0)
+
+[node name="Erika" parent="VisualPivot" instance=ExtResource("4_erika")]
+
+[node name="CombatSword" parent="VisualPivot/Erika/Skeleton3D" instance=ExtResource("6_combat_sword")]
+transform = Transform3D(7.54791e-07, -1, -8.41021e-05, 5.5829e-07, 8.41021e-05, -1, 1, 7.54744e-07, 5.58354e-07, -0.739411, 1.43565, -0.0596858)
+entity = NodePath("../../../..")
+
+[node name="Area" parent="VisualPivot/Erika/Skeleton3D/CombatSword" index="1"]
+collision_mask = 8
+
+[node name="Collider" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.875, 0)
+shape = SubResource("CapsuleShape_dynamic")
+
+[node name="CombatHealth" type="Node3D" parent="."]
+position = Vector3(0, 1.1, 0)
+script = ExtResource("7_health")
+max_health = 100.0
+
+[node name="CombatHurtbox" type="Area3D" parent="."]
+position = Vector3(0, 0.90, 0)
+collision_layer = 2
+collision_mask = 4
+monitoring = true
+monitorable = true
+
+[node name="Shape" type="CollisionShape3D" parent="CombatHurtbox"]
+shape = SubResource("CombatHurtboxShape")
+
+[node name="CameraRig" type="Node3D" parent="."]
+
+[node name="SpringArm3D" type="SpringArm3D" parent="CameraRig"]
+spring_length = 4.25
+margin = 0.18
+collision_mask = 1
+
+[node name="PlayerCamera" type="Camera3D" parent="CameraRig/SpringArm3D"]
+current = true
+fov = 58.0
+near = 0.08
+far = 320.0
+
+[node name="IntentMarker" type="MeshInstance3D" parent="."]
+visible = false
+position = Vector3(0, 1.2, -1.2)
+mesh = SubResource("MarkerMesh")
+
+[editable path="VisualPivot/Erika"]
+[editable path="VisualPivot/Erika/Skeleton3D/CombatSword"]

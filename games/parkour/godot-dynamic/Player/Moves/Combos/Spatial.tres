@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SpatialMoveset" load_steps=2 format=3 uid="uid://cwtbyxb7n5v2g"]
+
+[ext_resource type="Script" path="res://Player/Moves/Combos/SpatialMoveset.gd" id="1_jflfj"]
+
+[resource]
+script = ExtResource("1_jflfj")
+sensor_type = 2
+target = 1
+modifier_action = ""
+triggered_move = "ledge_grab"

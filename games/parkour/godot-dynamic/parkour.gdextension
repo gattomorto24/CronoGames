@@ -1,0 +1,12 @@
+[configuration]
+
+entry_symbol = "parkour_library_init"
+compatibility_minimum = "4.5"
+reloadable = true
+
+[libraries]
+
+macos.debug = "res://bin/libparkour.macos.template_debug.framework"
+macos.release = "res://bin/libparkour.macos.template_release.framework"
+windows.debug.x86_64 = "res://bin/libparkour.windows.template_debug.x86_64.dll"
+windows.release.x86_64 = "res://bin/libparkour.windows.template_release.x86_64.dll"

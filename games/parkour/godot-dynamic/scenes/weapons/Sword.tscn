@@ -1,0 +1,89 @@
+[gd_scene load_steps=11 format=3 uid="uid://b78ctcv6lulvi"]
+
+[ext_resource type="Script" path="res://scripts/miscellaneous/damage_source.gd" id="1_5h0xx"]
+[ext_resource type="Shader" path="res://shaders/fade.gdshader" id="2_8x6u6"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_dg00e"]
+top_radius = 0.012
+bottom_radius = 0.025
+height = 1.08
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_5w3p4"]
+render_priority = 0
+shader = ExtResource("2_8x6u6")
+shader_parameter/albedo = Color(0.84, 0.88, 0.92, 1)
+shader_parameter/specular = 0.72
+shader_parameter/metallic = 0.82
+shader_parameter/roughness = 0.34
+shader_parameter/normal_strength = 1.0
+shader_parameter/alpha_clip = 0.0
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_ae4jg"]
+radius = 0.055
+height = 1.16
+
+[sub_resource type="CylinderMesh" id="GripMesh"]
+top_radius = 0.035
+bottom_radius = 0.035
+height = 0.30
+
+[sub_resource type="BoxMesh" id="GuardMesh"]
+size = Vector3(0.36, 0.035, 0.055)
+
+[sub_resource type="SphereMesh" id="PommelMesh"]
+radius = 0.045
+height = 0.09
+
+[sub_resource type="StandardMaterial3D" id="GripMaterial"]
+albedo_color = Color(0.075, 0.045, 0.028, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="GuardMaterial"]
+albedo_color = Color(0.58, 0.45, 0.24, 1)
+metallic = 0.68
+roughness = 0.42
+
+[node name="Sword" type="BoneAttachment3D"]
+transform = Transform3D(0, -1, 0, 0, 0, -1, 1, 0, 0, -0.734268, 1.43559, -0.0641424)
+bone_name = "RightHand"
+bone_idx = 35
+script = ExtResource("1_5h0xx")
+
+[node name="Blade" type="MeshInstance3D" parent="."]
+transform = Transform3D(-0.891467, -0.453089, -3.91618e-05, 0.453089, -0.891468, -0.000158824, 3.70497e-05, -0.00015933, 1, 0.168411, 0.443186, 0.0233156)
+layers = 2
+mesh = SubResource("CylinderMesh_dg00e")
+surface_material_override/0 = SubResource("ShaderMaterial_5w3p4")
+
+[node name="Grip" type="MeshInstance3D" parent="."]
+transform = Transform3D(-0.891467, -0.453089, -3.91618e-05, 0.453089, -0.891468, -0.000158824, 3.70497e-05, -0.00015933, 1, -0.126, -0.136, 0.0233)
+layers = 2
+mesh = SubResource("GripMesh")
+surface_material_override/0 = SubResource("GripMaterial")
+
+[node name="Guard" type="MeshInstance3D" parent="."]
+transform = Transform3D(-0.891467, -0.453089, -3.91618e-05, 0.453089, -0.891468, -0.000158824, 3.70497e-05, -0.00015933, 1, -0.050, 0.015, 0.0233)
+layers = 2
+mesh = SubResource("GuardMesh")
+surface_material_override/0 = SubResource("GuardMaterial")
+
+[node name="Pommel" type="MeshInstance3D" parent="."]
+position = Vector3(-0.185, -0.252, 0.0233)
+layers = 2
+mesh = SubResource("PommelMesh")
+surface_material_override/0 = SubResource("GuardMaterial")
+
+[node name="BladeBase" type="Marker3D" parent="."]
+position = Vector3(-0.0581, -0.0025, 0.0232)
+
+[node name="BladeTip" type="Marker3D" parent="."]
+position = Vector3(0.413, 0.926, 0.0234)
+
+[node name="Area" type="Area3D" parent="." groups=["damage_source"]]
+transform = Transform3D(1, 0, 0, 0, 1, 4.70233e-13, 0, 4.70233e-13, 1, 0, 0, 0)
+collision_layer = 4
+collision_mask = 8
+
+[node name="Collider" type="CollisionShape3D" parent="Area"]
+transform = Transform3D(-0.891466, -0.453088, -3.91619e-05, 0.453088, -0.891466, -0.000158824, 3.70497e-05, -0.00015933, 1, 0.168411, 0.443186, 0.0233156)
+shape = SubResource("CapsuleShape3D_ae4jg")
